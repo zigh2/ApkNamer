@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">APK Namer</string>
+
+    <string name="permission_title">نحتاج إلى صلاحية الوصول للملفات</string>
+    <string name="permission_body">يحتاج التطبيق إلى الوصول لجميع الملفات ليبحث عن حزم التطبيقات ويعيد تسميتها في مكانها. لا يتم رفع أي شيء، وكل العمل يتم على جهازك.</string>
+    <string name="permission_grant">منح الصلاحية</string>
+
+    <string name="location_label">مكان البحث</string>
+    <string name="location_change">تغيير</string>
+    <string name="root_downloads">التنزيلات</string>
+    <string name="root_storage">التخزين الداخلي</string>
+    <string name="root_choose">اختيار مجلد…</string>
+
+    <string name="scan">بحث</string>
+    <string name="scan_stop">إيقاف</string>
+    <string name="scan_progress">جارٍ البحث… تم فحص %1$d ملف</string>
+    <string name="analyze_progress">جارٍ التحليل %1$d من %2$d</string>
+
+    <string name="empty_title">لا توجد نتائج بعد</string>
+    <string name="empty_body">اختر مجلداً ثم اضغط «بحث».</string>
+    <string name="no_results_title">لم يُعثر على شيء</string>
+    <string name="no_results_body">لا توجد حزم تطبيقات هنا. جرّب «الفحص العميق» من الخيارات.</string>
+    <string name="found_count">تم العثور على %1$d حزمة</string>
+
+    <string name="select_all">تحديد الكل</string>
+    <string name="select_none">إلغاء التحديد</string>
+    <string name="selected_of">تم تحديد %1$d من %2$d</string>
+    <string name="rename_n">إعادة تسمية %1$d</string>
+
+    <string name="problem_not_archive">الملف ليس أرشيفاً صالحاً</string>
+    <string name="problem_corrupt">الملف تالف أو غير مكتمل</string>
+    <string name="problem_no_metadata">تعذّرت قراءة معلومات التطبيق</string>
+    <string name="problem_not_app">لا يبدو أنه حزمة تطبيق</string>
+    <string name="status_unchanged">الاسم مطابق بالفعل</string>
+
+    <string name="confirm_title">إعادة تسمية الملفات؟</string>
+    <string name="confirm_body">ستتم إعادة تسمية %1$d ملف. يمكنك التراجع عن آخر دفعة.</string>
+    <string name="confirm_ok">إعادة التسمية</string>
+    <string name="cancel">إلغاء</string>
+
+    <string name="msg_renamed">تمت إعادة تسمية %1$d ملف</string>
+    <string name="msg_renamed_failed">تمت إعادة تسمية %1$d ملف وفشل %2$d</string>
+    <string name="msg_undone">تمت استعادة %1$d ملف</string>
+    <string name="msg_scan_failed">فشل البحث</string>
+    <string name="msg_folder_unsupported">هذا المجلد غير مدعوم. اختر مجلداً في التخزين الداخلي أو بطاقة SD.</string>
+    <string name="undo">تراجع</string>
+    <string name="undo_last">تراجع عن آخر دفعة</string>
+
+    <string name="options">الخيارات</string>
+    <string name="template_label">قالب الاسم</string>
+    <string name="template_help">الرموز المتاحة: {name} {package} {version} {code} {type} {original}. ضع النص بين &lt;…&gt; ليُحذف تلقائياً إذا كانت القيمة غير متوفرة.</string>
+    <string name="template_unknown">رموز غير معروفة: %1$s</string>
+    <string name="preview">المعاينة: %1$s</string>
+    <string name="opt_replace_spaces">استبدال المسافات بشرطة سفلية</string>
+    <string name="opt_fix_extension">تصحيح الامتداد حسب نوع الحزمة المكتشف</string>
+    <string name="opt_deep_scan">فحص عميق (أي امتداد)</string>
+    <string name="opt_deep_scan_desc">أبطأ. يفحص محتوى كل ملف.</string>
+</resources>

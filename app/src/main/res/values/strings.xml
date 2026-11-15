@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">APK Namer</string>
+
+    <string name="permission_title">Storage access needed</string>
+    <string name="permission_body">APK Namer needs access to all files to find app packages and rename them in place. Nothing is uploaded; everything happens on your device.</string>
+    <string name="permission_grant">Grant access</string>
+
+    <string name="location_label">Scan location</string>
+    <string name="location_change">Change</string>
+    <string name="root_downloads">Downloads</string>
+    <string name="root_storage">Internal storage</string>
+    <string name="root_choose">Choose folder…</string>
+
+    <string name="scan">Scan</string>
+    <string name="scan_stop">Stop</string>
+    <string name="scan_progress">Scanning… %1$d files checked</string>
+    <string name="analyze_progress">Analyzing %1$d of %2$d</string>
+
+    <string name="empty_title">No results yet</string>
+    <string name="empty_body">Pick a folder and tap Scan.</string>
+    <string name="no_results_title">Nothing found</string>
+    <string name="no_results_body">No app packages were found here. Try Deep scan in Options.</string>
+    <string name="found_count">%1$d packages found</string>
+
+    <string name="select_all">Select all</string>
+    <string name="select_none">Select none</string>
+    <string name="selected_of">%1$d of %2$d selected</string>
+    <string name="rename_n">Rename %1$d</string>
+
+    <string name="problem_not_archive">Not a valid archive</string>
+    <string name="problem_corrupt">File is corrupt or incomplete</string>
+    <string name="problem_no_metadata">Couldn\'t read app info</string>
+    <string name="problem_not_app">Doesn\'t look like an app package</string>
+    <string name="status_unchanged">Already named correctly</string>
+
+    <string name="confirm_title">Rename files?</string>
+    <string name="confirm_body">%1$d files will be renamed. You can undo the last batch.</string>
+    <string name="confirm_ok">Rename</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="msg_renamed">Renamed %1$d files</string>
+    <string name="msg_renamed_failed">Renamed %1$d files, %2$d failed</string>
+    <string name="msg_undone">Restored %1$d files</string>
+    <string name="msg_scan_failed">Scan failed</string>
+    <string name="msg_folder_unsupported">This folder isn\'t supported. Choose a folder on internal storage or an SD card.</string>
+    <string name="undo">Undo</string>
+    <string name="undo_last">Undo last batch</string>
+
+    <string name="options">Options</string>
+    <string name="template_label">Name template</string>
+    <string name="template_help">Tokens: {name} {package} {version} {code} {type} {original}. Wrap text in &lt;…&gt; to drop it automatically when a value is missing.</string>
+    <string name="template_unknown">Unknown tokens: %1$s</string>
+    <string name="preview">Preview: %1$s</string>
+    <string name="opt_replace_spaces">Replace spaces with underscores</string>
+    <string name="opt_fix_extension">Fix extension according to detected type</string>
+    <string name="opt_deep_scan">Deep scan (any file extension)</string>
+    <string name="opt_deep_scan_desc">Slower. Inspects the contents of every file.</string>
+</resources>
