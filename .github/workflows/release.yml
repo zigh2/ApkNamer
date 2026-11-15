@@ -1,0 +1,166 @@
+name: Release from incoming zip
+
+# Drop  incoming/ApkNamer-v1.0.zip  (any name containing vX.Y or vX.Y.Z) into the repo.
+# The workflow replaces the project files with the zip contents, runs the tests, builds the APK,
+# commits the new project state and publishes a GitHub Release with a direct-download APK.
+
+on:
+  push:
+    branches: [main]
+    paths: ["incoming/*.zip"]
+  workflow_dispatch:
+    inputs:
+      zip:
+        description: "Zip file name inside incoming/ (leave empty to use the highest version)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pick the zip and read its version
+        id: pick
+        env:
+          BEFORE: ${{ github.event.before }}
+          INPUT_ZIP: ${{ inputs.zip }}
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_ZIP:-}" ]; then
+            NAME="$INPUT_ZIP"
+          else
+            CHANGED=""
+            if [ -n "${BEFORE:-}" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+              CHANGED=$(git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- 'incoming/*.zip' || true)
+            fi
+            if [ -z "$CHANGED" ]; then CHANGED=$(ls incoming/*.zip 2>/dev/null || true); fi
+            NAME=$(echo "$CHANGED" | sed 's#.*/##' | grep -v '^$' | sort -V | tail -n1 || true)
+          fi
+          ZIP="incoming/$NAME"
+          if [ -z "$NAME" ] || [ ! -f "$ZIP" ]; then
+            echo "::error::No zip found in incoming/"; exit 1
+          fi
+          VERSION=$(echo "$NAME" | grep -oE 'v[0-9]+(\.[0-9]+){1,2}' | tail -n1 | sed 's/^v//' || true)
+          if [ -z "$VERSION" ]; then
+            echo "::error::The zip name must contain a version such as v1.0 (got: $NAME)"; exit 1
+          fi
+          IFS=. read -r MAJOR MINOR PATCH <<< "$VERSION"
+          CODE=$(( MAJOR * 10000 + ${MINOR:-0} * 100 + ${PATCH:-0} ))
+          {
+            echo "zip=$ZIP"
+            echo "name=$NAME"
+            echo "version=$VERSION"
+            echo "code=$CODE"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Replace project files with the zip contents
+        env:
+          ZIP: ${{ steps.pick.outputs.zip }}
+          VERSION: ${{ steps.pick.outputs.version }}
+          CODE: ${{ steps.pick.outputs.code }}
+        run: |
+          set -euo pipefail
+          TMP=$(mktemp -d)
+          unzip -q "$ZIP" -d "$TMP"
+          shopt -s dotglob
+          ENTRIES=("$TMP"/*)
+          SRC="$TMP"
+          if [ ${#ENTRIES[@]} -eq 1 ] && [ -d "${ENTRIES[0]}" ]; then SRC="${ENTRIES[0]}"; fi
+          if ! ls "$SRC"/settings.gradle* >/dev/null 2>&1; then
+            echo "::error::The zip does not look like the project (settings.gradle* not found at its root)"; exit 1
+          fi
+          # Wipe the old project but keep git data, the incoming archive and the workflows.
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name incoming ! -name .github -exec rm -rf {} +
+          if [ -d .github ]; then
+            find .github -mindepth 1 -maxdepth 1 ! -name workflows -exec rm -rf {} +
+          fi
+          rsync -a --exclude='/incoming' --exclude='/.github/workflows' --exclude='/.git' "$SRC"/ ./
+          # Stamp the version from the zip name into the Gradle config.
+          sed -i -E "s/versionName = \".*\"/versionName = \"${VERSION}\"/; s/versionCode = [0-9]+/versionCode = ${CODE}/" app/build.gradle.kts
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Prepare signing key (optional)
+        id: sign
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "${KEYSTORE_B64:-}" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No KEYSTORE_BASE64 secret: building a debug-signed APK. Each build gets a different key, so it cannot be installed over a previous one. See incoming/README.md."
+          fi
+
+      - name: Test and build the APK
+        env:
+          VERSION: ${{ steps.pick.outputs.version }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.sign.outputs.signed }}" = "true" ]; then TASK=assembleRelease; DIR=release; else TASK=assembleDebug; DIR=debug; fi
+          gradle testDebugUnitTest "$TASK" --stacktrace
+          APK=$(ls app/build/outputs/apk/$DIR/*.apk | head -n1)
+          mkdir -p "$RUNNER_TEMP/dist"
+          cp "$APK" "$RUNNER_TEMP/dist/ApkNamer-v${VERSION}.apk"
+          cp "$APK" "$RUNNER_TEMP/dist/ApkNamer.apk"
+
+      - name: Commit the new project state
+        env:
+          VERSION: ${{ steps.pick.outputs.version }}
+          NAME: ${{ steps.pick.outputs.name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Project already identical to the zip; nothing to commit."
+          else
+            git commit -m "Release v${VERSION}: replace project with ${NAME}"
+            git push origin HEAD:main
+          fi
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.pick.outputs.version }}
+          NAME: ${{ steps.pick.outputs.name }}
+          SIGNED: ${{ steps.sign.outputs.signed }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          NOTES="Built automatically from incoming/${NAME}."
+          if [ "$SIGNED" != "true" ]; then NOTES="$NOTES (debug-signed build: no release keystore configured)"; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$RUNNER_TEMP"/dist/*.apk --clobber
+          else
+            gh release create "$TAG" "$RUNNER_TEMP"/dist/*.apk \
+              --title "APK Namer $TAG" --notes "$NOTES" --target "$(git rev-parse HEAD)" --latest
+          fi
+          {
+            echo "### APK Namer $TAG published"
+            echo "Direct link (always the newest): https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/ApkNamer.apk"
+            echo "This version: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/ApkNamer-${TAG}.apk"
+          } >> "$GITHUB_STEP_SUMMARY"

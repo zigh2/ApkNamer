@@ -1,0 +1,32 @@
+name: Bug report
+description: Something is not working as expected
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version and device
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Package format
+      options: [APK, XAPK, APKM, APKS / APKX / ASPK, Other / unknown]
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: listing
+    attributes:
+      label: Output of `unzip -l <file>` (for unreadable packages)
+      render: text
