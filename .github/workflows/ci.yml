@@ -23,7 +23,7 @@ jobs:
           gradle-version: "8.9"
       - name: Unit tests, lint and debug build
         run: gradle testDebugUnitTest lintDebug assembleDebug --stacktrace
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: apk-namer-debug
           path: app/build/outputs/apk/debug/*.apk
