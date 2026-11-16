@@ -143,4 +143,32 @@
     <string name="about_version">الإصدار %1$s</string>
     <string name="about_privacy">لا توجد صلاحية إنترنت. كل شيء يبقى على جهازك.</string>
     <string name="reset_defaults">استعادة الإعدادات الافتراضية</string>
+
+    <string name="section_row">حقول الصف</string>
+    <string name="list_preset">نمط جاهز</string>
+    <string name="preset_compact">مضغوط</string>
+    <string name="preset_standard">قياسي</string>
+    <string name="preset_detailed">مفصّل</string>
+    <string name="field_old_name">اسم الملف الأصلي</string>
+    <string name="field_version_name">اسم الإصدار</string>
+    <string name="field_version_code">رقم الإصدار</string>
+    <string name="field_package">اسم الحزمة</string>
+    <string name="field_size">حجم الملف</string>
+    <string name="field_date">تاريخ التعديل</string>
+    <string name="field_type_tag">وسم الصيغة (APK وXAPK…)</string>
+    <string name="field_install_tag">وسم حالة التثبيت</string>
+    <string name="field_duplicate_tag">وسم المكرر</string>
+    <string name="field_status">رسائل الحالة</string>
+
+    <string name="action_open_folder">فتح المجلد</string>
+    <string name="action_delete">حذف</string>
+    <string name="delete_title">حذف الملف؟</string>
+    <string name="delete_body">%1$s\n\n%2$s\n\nسيُحذف الملف نهائياً من جهازك ولا يمكن التراجع عن ذلك.</string>
+    <string name="delete_confirm">حذف</string>
+    <string name="duplicates_title">الملفات المكررة (%1$d)</string>
+    <string name="duplicates_hint">نفس التطبيق ونفس الإصدار. بعد كل عملية حذف يُعاد التحقق من وجود جميعها.</string>
+    <string name="tag_this_file">هذا الملف</string>
+    <string name="msg_deleted">تم حذف %1$d ملف</string>
+    <string name="msg_delete_failed">تعذّر حذف الملف</string>
+    <string name="open_folder_failed">لا يوجد مدير ملفات يستطيع فتح المجلد. تم نسخ المسار بدلاً من ذلك.</string>
 </resources>

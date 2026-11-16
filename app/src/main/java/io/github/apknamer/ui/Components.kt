@@ -3,8 +3,10 @@ package io.github.apknamer.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.text.format.DateUtils
 import android.text.format.Formatter
 import android.widget.Toast
@@ -32,6 +34,7 @@ import io.github.apknamer.R
 import io.github.apknamer.data.parse.IconLoader
 import io.github.apknamer.domain.DetectedFile
 import io.github.apknamer.domain.InstallState
+import java.io.File
 
 /** App icon loaded lazily; shows the first letter of the app name until (or unless) an icon is available. */
 @Composable
@@ -42,7 +45,7 @@ fun AppIcon(item: DetectedFile, loader: IconLoader, size: Dp, modifier: Modifier
         item.size,
         item.modified,
     ) {
-        if (value == null) value = loader.load(item)
+        value = loader.cached(item) ?: loader.load(item)
     }
     val shape = RoundedCornerShape(size * 0.24f)
     val current = bitmap
@@ -128,4 +131,41 @@ fun copyToClipboard(context: Context, text: String) {
     val manager = context.getSystemService(ClipboardManager::class.java)
     manager?.setPrimaryClip(ClipData.newPlainText("APK Namer", text))
     Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * Opens [folder] in the system file manager. Not every file manager accepts this request, so when none
+ * does, the path is copied to the clipboard instead.
+ */
+fun openFolder(context: Context, folder: File) {
+    val documentId = documentIdFor(folder)
+    if (documentId != null) {
+        val uri = DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", documentId)
+        for (mime in listOf(DocumentsContract.Document.MIME_TYPE_DIR, "resource/folder")) {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime))
+                return
+            } catch (_: Exception) {
+                // try the next MIME type
+            }
+        }
+    }
+    val manager = context.getSystemService(ClipboardManager::class.java)
+    manager?.setPrimaryClip(ClipData.newPlainText("APK Namer", folder.absolutePath))
+    Toast.makeText(context, R.string.open_folder_failed, Toast.LENGTH_LONG).show()
+}
+
+private fun documentIdFor(folder: File): String? {
+    @Suppress("DEPRECATION")
+    val internal = Environment.getExternalStorageDirectory().absolutePath
+    val path = folder.absolutePath
+    return when {
+        path == internal -> "primary:"
+        path.startsWith("$internal/") -> "primary:" + path.removePrefix("$internal/")
+        path.startsWith("/storage/") -> {
+            val rest = path.removePrefix("/storage/")
+            rest.substringBefore('/') + ":" + rest.substringAfter('/', "")
+        }
+        else -> null
+    }
 }

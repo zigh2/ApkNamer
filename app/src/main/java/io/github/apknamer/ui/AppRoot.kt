@@ -56,7 +56,7 @@ fun AppRoot(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
         when (screen) {
             Screen.MAIN -> MainScreen(state, viewModel, snackbarHostState, onRequestPermission)
             Screen.SETTINGS -> SettingsScreen(state, viewModel, viewModel::back)
-            Screen.DETAILS -> DetailsScreen(state, viewModel, viewModel::back)
+            Screen.DETAILS -> DetailsScreen(state, viewModel, snackbarHostState, viewModel::back)
         }
     }
 

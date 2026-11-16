@@ -62,6 +62,30 @@ data class RenameOptions(
     val fixExtension: Boolean = true,
 )
 
+/** Which fields each row of the main list shows. */
+data class ListOptions(
+    val icons: Boolean = true,
+    val oldName: Boolean = true,
+    val versionName: Boolean = true,
+    val versionCode: Boolean = true,
+    val packageName: Boolean = false,
+    val size: Boolean = true,
+    val date: Boolean = true,
+    val path: Boolean = true,
+    val typeTag: Boolean = true,
+    val installTag: Boolean = true,
+    val duplicateTag: Boolean = true,
+    val status: Boolean = true,
+) {
+    companion object {
+        val COMPACT = ListOptions(
+            oldName = false, versionCode = false, size = false, date = false, path = false, status = false,
+        )
+        val STANDARD = ListOptions()
+        val DETAILED = ListOptions(packageName = true)
+    }
+}
+
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 data class AppSettings(
@@ -74,8 +98,7 @@ data class AppSettings(
     val pureBlack: Boolean = false,
     /** "system" or a BCP-47 language tag such as "en" or "ar". */
     val language: String = "system",
-    val showIcons: Boolean = true,
-    val showPaths: Boolean = true,
+    val list: ListOptions = ListOptions(),
     val sortOrder: SortOrder = SortOrder.NAME,
     val sortDescending: Boolean = false,
     val confirmRename: Boolean = true,

@@ -68,6 +68,7 @@ import io.github.apknamer.R
 import io.github.apknamer.data.parse.IconLoader
 import io.github.apknamer.domain.AppSettings
 import io.github.apknamer.domain.Filter
+import io.github.apknamer.domain.InstallState
 import io.github.apknamer.domain.PackageType
 import io.github.apknamer.domain.PlanStatus
 import io.github.apknamer.domain.Problem
@@ -236,6 +237,7 @@ private fun LocationCard(
     onChooseFolder: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     Card(Modifier.fillMaxWidth().padding(16.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.location_label), style = MaterialTheme.typography.labelMedium)
@@ -268,6 +270,9 @@ private fun LocationCard(
                 }
                 Button(onClick = if (scanning) onStop else onScan) {
                     Text(stringResource(if (scanning) R.string.scan_stop else R.string.scan))
+                }
+                TextButton(onClick = { openFolder(context, root) }) {
+                    Text(stringResource(R.string.action_open_folder))
                 }
             }
         }
@@ -402,17 +407,29 @@ private fun ItemRow(
     onOpen: () -> Unit,
 ) {
     val context = LocalContext.current
+    val lo = settings.list
     val ready = item.plan.status == PlanStatus.READY
     val meta = item.detected.metadata
     val currentName = item.detected.file.name
-    val versionCode = meta?.versionCode
-    val versionText = meta?.versionName?.let { v -> if (versionCode != null) "$v ($versionCode)" else v }
+    val code = meta?.versionCode
+    val versionText = when {
+        lo.versionName && lo.versionCode ->
+            meta?.versionName?.let { v -> if (code != null) "$v ($code)" else v } ?: code?.toString()
+        lo.versionName -> meta?.versionName
+        lo.versionCode -> code?.toString()
+        else -> null
+    }
     val details = listOfNotNull(
         versionText,
-        formatSize(context, item.detected.size),
-        formatDate(context, item.detected.modified),
-    ).joinToString(" · ")
+        if (lo.size) formatSize(context, item.detected.size) else null,
+        if (lo.date) formatDate(context, item.detected.modified) else null,
+    ).joinToString(" \u00B7 ")
     val folder = rememberPrettyPath(item.detected.file.parent.orEmpty())
+    val install = item.entry.install
+    val showType = lo.typeTag && item.detected.type != PackageType.UNKNOWN
+    val showInstall = lo.installTag &&
+        (install == InstallState.UPDATE || install == InstallState.SAME || install == InstallState.DOWNGRADE)
+    val showDuplicate = lo.duplicateTag && item.entry.duplicate
 
     Row(
         Modifier
@@ -422,7 +439,7 @@ private fun ItemRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked = item.selected, onCheckedChange = { onToggle() }, enabled = ready)
-        if (settings.showIcons) {
+        if (lo.icons) {
             AppIcon(item.detected, loader, 44.dp)
             Spacer(Modifier.width(12.dp))
         }
@@ -434,7 +451,7 @@ private fun ItemRow(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (ready) {
+            if (lo.oldName && ready) {
                 Text(
                     text = currentName,
                     style = MaterialTheme.typography.bodySmall,
@@ -444,14 +461,26 @@ private fun ItemRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                text = details,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (settings.showPaths) {
+            val packageLine = if (lo.packageName) meta?.packageName else null
+            if (packageLine != null) {
+                Text(
+                    text = packageLine,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (details.isNotEmpty()) {
+                Text(
+                    text = details,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (lo.path) {
                 Text(
                     text = folder,
                     style = MaterialTheme.typography.labelSmall,
@@ -460,24 +489,28 @@ private fun ItemRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            statusText(item)?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (item.detected.type != PackageType.UNKNOWN) {
-                    Tag(
-                        item.detected.type.extension.uppercase(),
-                        MaterialTheme.colorScheme.secondaryContainer,
-                        MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
+            if (lo.status) {
+                statusText(item)?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 }
-                InstallTag(item.entry.install)
-                if (item.entry.duplicate) {
-                    Tag(
-                        stringResource(R.string.tag_duplicate),
-                        MaterialTheme.colorScheme.errorContainer,
-                        MaterialTheme.colorScheme.onErrorContainer,
-                    )
+            }
+            if (showType || showInstall || showDuplicate) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (showType) {
+                        Tag(
+                            item.detected.type.extension.uppercase(),
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                    if (showInstall) InstallTag(install)
+                    if (showDuplicate) {
+                        Tag(
+                            stringResource(R.string.tag_duplicate),
+                            MaterialTheme.colorScheme.errorContainer,
+                            MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
                 }
             }
         }

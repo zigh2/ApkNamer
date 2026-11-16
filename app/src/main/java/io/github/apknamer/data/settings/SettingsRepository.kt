@@ -2,6 +2,7 @@ package io.github.apknamer.data.settings
 
 import android.content.Context
 import io.github.apknamer.domain.AppSettings
+import io.github.apknamer.domain.ListOptions
 import io.github.apknamer.domain.NameTemplate
 import io.github.apknamer.domain.RenameOptions
 import io.github.apknamer.domain.SortOrder
@@ -39,8 +40,20 @@ class SettingsRepository(context: Context) {
         dynamicColor = prefs.getBoolean("dynamic_color", true),
         pureBlack = prefs.getBoolean("pure_black", false),
         language = prefs.getString(KEY_LANGUAGE, null) ?: "system",
-        showIcons = prefs.getBoolean("show_icons", true),
-        showPaths = prefs.getBoolean("show_paths", true),
+        list = ListOptions(
+            icons = prefs.getBoolean("list_icons", true),
+            oldName = prefs.getBoolean("list_old_name", true),
+            versionName = prefs.getBoolean("list_version_name", true),
+            versionCode = prefs.getBoolean("list_version_code", true),
+            packageName = prefs.getBoolean("list_package", false),
+            size = prefs.getBoolean("list_size", true),
+            date = prefs.getBoolean("list_date", true),
+            path = prefs.getBoolean("list_path", true),
+            typeTag = prefs.getBoolean("list_type_tag", true),
+            installTag = prefs.getBoolean("list_install_tag", true),
+            duplicateTag = prefs.getBoolean("list_duplicate_tag", true),
+            status = prefs.getBoolean("list_status", true),
+        ),
         sortOrder = enumOf(prefs.getString("sort", null), SortOrder.NAME),
         sortDescending = prefs.getBoolean("sort_desc", false),
         confirmRename = prefs.getBoolean("confirm_rename", true),
@@ -58,8 +71,18 @@ class SettingsRepository(context: Context) {
             .putBoolean("dynamic_color", s.dynamicColor)
             .putBoolean("pure_black", s.pureBlack)
             .putString(KEY_LANGUAGE, s.language)
-            .putBoolean("show_icons", s.showIcons)
-            .putBoolean("show_paths", s.showPaths)
+            .putBoolean("list_icons", s.list.icons)
+            .putBoolean("list_old_name", s.list.oldName)
+            .putBoolean("list_version_name", s.list.versionName)
+            .putBoolean("list_version_code", s.list.versionCode)
+            .putBoolean("list_package", s.list.packageName)
+            .putBoolean("list_size", s.list.size)
+            .putBoolean("list_date", s.list.date)
+            .putBoolean("list_path", s.list.path)
+            .putBoolean("list_type_tag", s.list.typeTag)
+            .putBoolean("list_install_tag", s.list.installTag)
+            .putBoolean("list_duplicate_tag", s.list.duplicateTag)
+            .putBoolean("list_status", s.list.status)
             .putString("sort", s.sortOrder.name)
             .putBoolean("sort_desc", s.sortDescending)
             .putBoolean("confirm_rename", s.confirmRename)

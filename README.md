@@ -23,6 +23,7 @@ once apps became split bundles.
 - **Private** – no `INTERNET` permission, no analytics, nothing leaves the device.
 - **Rich list** – app icons, size, date, folder path; search, filter (type / updates / duplicates) and sort.
 - **Details page** – package, versions, min/target Android, permissions, signature SHA-256, bundle contents, install state vs. your device.
+- **Duplicates & cleanup** – see every duplicate of an app (same package and version) with paths and sizes, delete from the details page, open the folder in your file manager.
 - **Customisable** – light/dark/system theme, dynamic colors, pure black, in-app language (English / Arabic with full RTL).
 
 ## Supported formats and where metadata comes from

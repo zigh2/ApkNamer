@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.apknamer.R
 import io.github.apknamer.domain.FileNameSanitizer
+import io.github.apknamer.domain.ListOptions
 import io.github.apknamer.domain.NameTemplate
 import io.github.apknamer.domain.SortOrder
 import io.github.apknamer.domain.ThemeMode
@@ -213,17 +214,34 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
                 )
             }
 
+            Section(stringResource(R.string.section_row)) {
+                val l = s.list
+                val setList: ((ListOptions) -> ListOptions) -> Unit =
+                    { change -> vm.updateSettings { it.copy(list = change(it.list)) } }
+                ChoiceRow(
+                    stringResource(R.string.list_preset),
+                    listOf(
+                        ListOptions.COMPACT to stringResource(R.string.preset_compact),
+                        ListOptions.STANDARD to stringResource(R.string.preset_standard),
+                        ListOptions.DETAILED to stringResource(R.string.preset_detailed),
+                    ),
+                    l,
+                ) { preset -> setList { preset } }
+                SwitchRow(stringResource(R.string.show_icons), l.icons, { v -> setList { it.copy(icons = v) } })
+                SwitchRow(stringResource(R.string.field_old_name), l.oldName, { v -> setList { it.copy(oldName = v) } })
+                SwitchRow(stringResource(R.string.field_version_name), l.versionName, { v -> setList { it.copy(versionName = v) } })
+                SwitchRow(stringResource(R.string.field_version_code), l.versionCode, { v -> setList { it.copy(versionCode = v) } })
+                SwitchRow(stringResource(R.string.field_package), l.packageName, { v -> setList { it.copy(packageName = v) } })
+                SwitchRow(stringResource(R.string.field_size), l.size, { v -> setList { it.copy(size = v) } })
+                SwitchRow(stringResource(R.string.field_date), l.date, { v -> setList { it.copy(date = v) } })
+                SwitchRow(stringResource(R.string.show_paths), l.path, { v -> setList { it.copy(path = v) } })
+                SwitchRow(stringResource(R.string.field_type_tag), l.typeTag, { v -> setList { it.copy(typeTag = v) } })
+                SwitchRow(stringResource(R.string.field_install_tag), l.installTag, { v -> setList { it.copy(installTag = v) } })
+                SwitchRow(stringResource(R.string.field_duplicate_tag), l.duplicateTag, { v -> setList { it.copy(duplicateTag = v) } })
+                SwitchRow(stringResource(R.string.field_status), l.status, { v -> setList { it.copy(status = v) } })
+            }
+
             Section(stringResource(R.string.section_list)) {
-                SwitchRow(
-                    stringResource(R.string.show_icons),
-                    s.showIcons,
-                    { v -> vm.updateSettings { it.copy(showIcons = v) } },
-                )
-                SwitchRow(
-                    stringResource(R.string.show_paths),
-                    s.showPaths,
-                    { v -> vm.updateSettings { it.copy(showPaths = v) } },
-                )
                 ChoiceRow(
                     stringResource(R.string.sort_by),
                     SortOrder.entries.map { it to sortName(it) },

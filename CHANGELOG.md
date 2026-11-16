@@ -5,6 +5,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.6]
+
+### Fixed
+- Lint error `ProduceStateDoesNotAssignValue` in the app icon composable that made the CI lint step fail (the app itself compiled and all unit tests passed).
+
+## [1.5]
+
+### Added
+- Choose exactly which fields each list row shows (original name, version name/code, package, size, date, folder path, format/install/duplicate tags, status) with Compact / Standard / Detailed presets.
+- "Open folder" (details page, duplicate rows, scan location).
+- Delete a file from its details page. All duplicates (same package and version code) are listed with their paths and sizes; after every deletion all known files are re-checked and the list is refreshed.
+
+### Changed
+- Releases now contain a single APK asset named `ApkNamer.apk`; other assets are removed on re-runs. (GitHub always adds its own "Source code" archives, which cannot be disabled.)
+- Workflows: Node 24-ready action versions, pinned `ubuntu-24.04`, a more robust and more verbose commit/push step.
+- Dependabot: monthly, grouped, and no longer proposes AGP / Kotlin / coroutines / Gradle-wrapper upgrades that need manual migration.
+- Removed the unused DataStore dependency.
+
 ## [1.4]
 
 ### Added

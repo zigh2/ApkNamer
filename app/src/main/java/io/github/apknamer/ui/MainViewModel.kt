@@ -25,6 +25,7 @@ import io.github.apknamer.diagnostics.CrashReporter
 import io.github.apknamer.diagnostics.ExitReasonReporter
 import io.github.apknamer.domain.AppSettings
 import io.github.apknamer.domain.DetectedFile
+import io.github.apknamer.domain.Duplicates
 import io.github.apknamer.domain.Entry
 import io.github.apknamer.domain.EntryQuery
 import io.github.apknamer.domain.Filter
@@ -73,6 +74,7 @@ data class UiState(
     val screen: Screen = Screen.MAIN,
     val detailsId: String? = null,
     val detailsEntry: Entry? = null,
+    val detailsDuplicates: List<Entry> = emptyList(),
     val details: FileDetails? = null,
     val detailsLoading: Boolean = false,
 ) {
@@ -160,7 +162,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun back() {
         detailsJob?.cancel()
         _state.update {
-            it.copy(screen = Screen.MAIN, detailsId = null, detailsEntry = null, details = null, detailsLoading = false)
+            it.copy(
+                screen = Screen.MAIN, detailsId = null, detailsEntry = null, detailsDuplicates = emptyList(),
+                details = null, detailsLoading = false,
+            )
         }
     }
 
@@ -168,9 +173,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val entry = entries.firstOrNull { it.detected.id == id } ?: return
         detailsJob?.cancel()
         _state.update {
-            it.copy(screen = Screen.DETAILS, detailsId = id, detailsEntry = entry, details = null, detailsLoading = true)
+            it.copy(
+                screen = Screen.DETAILS, detailsId = id, detailsEntry = entry,
+                detailsDuplicates = Duplicates.groupOf(entries, id), details = null, detailsLoading = true,
+            )
         }
         detailsJob = viewModelScope.launch {
+            // Re-verify the duplicate group before showing it.
+            val missing = withContext(Dispatchers.IO) { Duplicates.groupOf(entries, id).any { !it.detected.file.exists() } }
+            if (missing) {
+                detected = withContext(Dispatchers.IO) { Duplicates.prune(detected) { it.exists() } }
+                replan()
+            }
             val loaded = try {
                 detailsLoader.load(entry.detected)
             } catch (e: CancellationException) {
@@ -311,6 +325,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         replan()
     }
 
+    // ---- deleting -------------------------------------------------------------------------
+
+    /** Deletes one file, then re-checks that every known file (duplicates especially) still exists. */
+    fun deleteFile(id: String) {
+        if (_state.value.busy) return
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true) }
+            val neighbours = Duplicates.groupOf(entries, id).map { it.detected.id }.filter { it != id }
+            val before = detected.size
+            val remaining = withContext(Dispatchers.IO) {
+                runCatching { File(id).delete() }
+                Duplicates.prune(detected) { it.exists() }
+            }
+            detected = remaining
+            val ids = remaining.map { it.id }.toSet()
+            selection = selection.filter { it in ids }.toSet()
+            val gone = id !in ids
+            if (gone && _state.value.detailsId == id) {
+                val next = neighbours.firstOrNull { it in ids }
+                if (next != null) openDetails(next) else back()
+            }
+            replan()
+            _state.update { it.copy(busy = false) }
+            _messages.trySend(
+                if (gone) {
+                    UiMessage(R.string.msg_deleted, listOf(maxOf(before - remaining.size, 1)))
+                } else {
+                    UiMessage(R.string.msg_delete_failed)
+                },
+            )
+        }
+    }
+
     // ---- settings -------------------------------------------------------------------------
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
@@ -323,12 +370,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // ---- derived data ---------------------------------------------------------------------
 
-    private fun duplicateKey(d: DetectedFile): String? {
-        val pkg = d.metadata?.packageName
-        val code = d.metadata?.versionCode
-        return if (pkg != null && code != null) "$pkg|$code" else null
-    }
-
     private fun replan() {
         planJob?.cancel()
         planJob = viewModelScope.launch(Dispatchers.Default) {
@@ -338,11 +379,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
                 return@launch
             }
-            val counts = snapshot.mapNotNull { duplicateKey(it) }.groupingBy { it }.eachCount()
+            val counts = Duplicates.counts(snapshot)
             val codes = installedCodes
             entries = snapshot.zip(plans) { d, p ->
                 val meta = d.metadata
-                val key = duplicateKey(d)
+                val key = Duplicates.key(d)
                 Entry(
                     detected = d,
                     plan = p,
@@ -367,6 +408,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 items = visible.map { ItemUi(it, it.plan.status == PlanStatus.READY && it.detected.id in selected) },
                 totalFound = all.size,
                 detailsEntry = cur.detailsId?.let { id -> all.firstOrNull { it.detected.id == id } } ?: cur.detailsEntry,
+                detailsDuplicates = cur.detailsId?.let { Duplicates.groupOf(all, it) }.orEmpty(),
             )
         }
     }

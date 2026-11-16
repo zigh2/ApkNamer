@@ -20,15 +20,20 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -46,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.apknamer.R
+import io.github.apknamer.domain.DetectedFile
 import io.github.apknamer.domain.InstallState
 import io.github.apknamer.domain.PackageType
 import io.github.apknamer.domain.PlanStatus
@@ -53,11 +59,12 @@ import java.text.NumberFormat
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun DetailsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
+fun DetailsScreen(state: UiState, vm: MainViewModel, snackbar: SnackbarHostState, onBack: () -> Unit) {
     val context = LocalContext.current
     val entry = state.detailsEntry
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.details_title)) },
@@ -82,6 +89,7 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
         val installed = state.details?.installed
         val packageName = meta?.packageName
         var showPermissions by rememberSaveable { mutableStateOf(false) }
+        var deleteTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
         Column(
             Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -223,6 +231,27 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
                 InfoRow(stringResource(R.string.label_format), file.type.extension.uppercase().ifEmpty { null })
             }
 
+            // Duplicates
+            if (state.detailsDuplicates.size > 1) {
+                InfoCard(stringResource(R.string.duplicates_title, state.detailsDuplicates.size)) {
+                    Text(
+                        stringResource(R.string.duplicates_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    state.detailsDuplicates.forEachIndexed { index, dup ->
+                        if (index > 0) HorizontalDivider()
+                        DuplicateRow(
+                            file = dup.detected,
+                            current = dup.detected.id == file.id,
+                            enabled = !state.busy,
+                            onOpenFolder = { openFolder(context, dup.detected.file.parentFile ?: dup.detected.file) },
+                            onDelete = { deleteTarget = dup.detected.id },
+                        )
+                    }
+                }
+            }
+
             // Bundle contents
             val contents = state.details?.contents.orEmpty()
             if (contents.isNotEmpty()) {
@@ -246,6 +275,9 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
 
             // Actions
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { openFolder(context, file.file.parentFile ?: file.file) }) {
+                    Text(stringResource(R.string.action_open_folder))
+                }
                 OutlinedButton(onClick = { copyToClipboard(context, file.file.absolutePath) }) {
                     Text(stringResource(R.string.action_copy_path))
                 }
@@ -262,6 +294,87 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
                         Text(stringResource(R.string.action_app_info))
                     }
                 }
+                Button(
+                    onClick = { deleteTarget = file.id },
+                    enabled = !state.busy,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) { Text(stringResource(R.string.action_delete)) }
+            }
+
+            deleteTarget?.let { target ->
+                val targetFile = (state.detailsDuplicates.map { it.detected } + file).firstOrNull { it.id == target }
+                AlertDialog(
+                    onDismissRequest = { deleteTarget = null },
+                    title = { Text(stringResource(R.string.delete_title)) },
+                    text = {
+                        Text(
+                            stringResource(
+                                R.string.delete_body,
+                                targetFile?.file?.name ?: target,
+                                targetFile?.file?.absolutePath ?: target,
+                            ),
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            deleteTarget = null
+                            vm.deleteFile(target)
+                        }) {
+                            Text(stringResource(R.string.delete_confirm), color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) }
+                    },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DuplicateRow(
+    file: DetectedFile,
+    current: Boolean,
+    enabled: Boolean,
+    onOpenFolder: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val context = LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                file.file.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (current) {
+                Tag(
+                    stringResource(R.string.tag_this_file),
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+        Text(
+            rememberPrettyPath(file.file.parent.orEmpty()),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+        Text(
+            formatSize(context, file.size) + " \u00B7 " + formatDate(context, file.modified),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = onOpenFolder) { Text(stringResource(R.string.action_open_folder)) }
+            TextButton(onClick = onDelete, enabled = enabled) {
+                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
             }
         }
     }
