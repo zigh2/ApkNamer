@@ -97,7 +97,7 @@ jobs:
           # Stamp the version from the zip name into the Gradle config.
           sed -i -E "s/versionName = \".*\"/versionName = \"${VERSION}\"/; s/versionCode = [0-9]+/versionCode = ${CODE}/" app/build.gradle.kts
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         if: steps.pick.outputs.found == 'true'
         with:
           distribution: temurin
