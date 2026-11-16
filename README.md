@@ -90,6 +90,11 @@ app/src/main/java/io/github/apknamer/
 MVVM with unidirectional data flow: the ViewModel owns an immutable `UiState`; the UI only renders it and
 sends events back. The rename plan is a pure function of *(detected files, options)*, so previews and tests are cheap.
 
+## Troubleshooting
+
+If the app closes unexpectedly, reopen it: a **Previous session report** dialog shows what happened.
+Copy it into a bug report. Note that Android itself restarts an app right after you grant *All files access*.
+
 ## Known limitations
 
 - App labels are resolved in the **device language**; apps without a translation fall back to their default label.

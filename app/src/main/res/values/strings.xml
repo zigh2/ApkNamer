@@ -56,4 +56,9 @@
     <string name="opt_fix_extension">Fix extension according to detected type</string>
     <string name="opt_deep_scan">Deep scan (any file extension)</string>
     <string name="opt_deep_scan_desc">Slower. Inspects the contents of every file.</string>
+
+    <string name="diag_title">Previous session report</string>
+    <string name="diag_body">The app closed unexpectedly last time. Copy this report and send it to the developer.</string>
+    <string name="diag_copy">Copy</string>
+    <string name="close">Close</string>
 </resources>

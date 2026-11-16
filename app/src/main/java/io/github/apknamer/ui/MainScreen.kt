@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -51,12 +55,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -147,6 +155,38 @@ fun MainScreen(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
             onFixExtension = viewModel::setFixExtension,
             onDeepScan = viewModel::setDeepScan,
             onDismiss = { showOptions = false },
+        )
+    }
+
+    state.diagnostics?.let { report ->
+        val clipboard = LocalClipboardManager.current
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDiagnostics,
+            title = { Text(stringResource(R.string.diag_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.diag_body), style = MaterialTheme.typography.bodySmall)
+                    SelectionContainer {
+                        Text(
+                            report,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(rememberScrollState()),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { clipboard.setText(AnnotatedString(report)) }) {
+                    Text(stringResource(R.string.diag_copy))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissDiagnostics) { Text(stringResource(R.string.close)) }
+            },
         )
     }
 

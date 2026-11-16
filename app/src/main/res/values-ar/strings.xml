@@ -56,4 +56,9 @@
     <string name="opt_fix_extension">تصحيح الامتداد حسب نوع الحزمة المكتشف</string>
     <string name="opt_deep_scan">فحص عميق (أي امتداد)</string>
     <string name="opt_deep_scan_desc">أبطأ. يفحص محتوى كل ملف.</string>
+
+    <string name="diag_title">تقرير الجلسة السابقة</string>
+    <string name="diag_body">أُغلق التطبيق بشكل غير متوقع في المرة الماضية. انسخ هذا التقرير وأرسله للمطوّر.</string>
+    <string name="diag_copy">نسخ</string>
+    <string name="close">إغلاق</string>
 </resources>

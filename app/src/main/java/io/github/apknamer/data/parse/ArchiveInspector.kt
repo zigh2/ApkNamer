@@ -35,12 +35,12 @@ class ArchiveInspector(
         }
         val zip = try {
             ZipFile(file)
-        } catch (_: IOException) {
+        } catch (_: Exception) {
             return if (declared) DetectedFile(file, extType, null, Problem.CORRUPT) else null
         }
         return try {
             zip.use { inspectZip(file, it, declared) }
-        } catch (_: IOException) {
+        } catch (_: Exception) {
             if (declared) DetectedFile(file, extType, null, Problem.CORRUPT) else null
         }
     }
@@ -122,7 +122,7 @@ class ArchiveInspector(
             tmp = created
             zip.getInputStream(entry).use { input -> created.outputStream().use { input.copyTo(it) } }
             reader.read(created)
-        } catch (_: IOException) {
+        } catch (_: Exception) {
             null
         } finally {
             tmp?.delete()

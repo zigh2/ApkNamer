@@ -7,6 +7,7 @@ import io.github.apknamer.domain.PackageType
 import io.github.apknamer.domain.ScanProgress
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -23,7 +24,7 @@ import kotlinx.coroutines.withContext
  */
 class FileScanner(
     private val inspector: ArchiveInspector,
-    private val parallelism: Int = 4,
+    private val parallelism: Int = 2,
 ) {
     suspend fun scan(
         root: File,
@@ -56,13 +57,19 @@ class FileScanner(
             candidates.map { (file, declared) ->
                 async {
                     semaphore.withPermit {
-                        val result = inspector.inspect(file, declared)
+                        val result = try {
+                            inspector.inspect(file, declared)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            null
+                        }
                         onProgress(ScanProgress(visited, analyzed.incrementAndGet(), total))
                         result
                     }
                 }
             }.awaitAll()
-        }.filterNotNull().sortedBy { it.file.name.lowercase() }
+        }.filterNotNull().distinctBy { it.id }.sortedBy { it.file.name.lowercase() }
     }
 
     private fun isIgnoredDirectory(dir: File): Boolean {

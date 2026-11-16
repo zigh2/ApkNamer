@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.1]
+
+### Added
+- Built-in diagnostics: after an unexpected close, the next launch shows a copyable report (Java stack trace or the system's process-exit reason).
+
+### Changed
+- Scan: lower parallelism, per-file failure isolation, de-duplication and throttled progress updates.
+
 ## [1.0]
 
 ### Added

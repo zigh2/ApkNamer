@@ -3,6 +3,7 @@ package io.github.apknamer.ui
 import android.app.Application
 import android.net.Uri
 import android.os.Environment
+import android.os.SystemClock
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,8 @@ import io.github.apknamer.data.rename.RenameHistory
 import io.github.apknamer.data.rename.RenameReport
 import io.github.apknamer.data.rename.Renamer
 import io.github.apknamer.data.scan.FileScanner
+import io.github.apknamer.diagnostics.CrashReporter
+import io.github.apknamer.diagnostics.ExitReasonReporter
 import io.github.apknamer.data.settings.SettingsRepository
 import io.github.apknamer.data.storage.StoragePermission
 import io.github.apknamer.data.storage.TreeUriPath
@@ -23,6 +26,7 @@ import io.github.apknamer.domain.RenamePlan
 import io.github.apknamer.domain.RenamePlanner
 import io.github.apknamer.domain.ScanProgress
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,6 +51,7 @@ data class UiState(
     val items: List<ItemUi> = emptyList(),
     val busy: Boolean = false,
     val canUndo: Boolean = false,
+    val diagnostics: String? = null,
 ) {
     val readyCount: Int get() = items.count { it.plan.status == PlanStatus.READY }
     val selectedCount: Int get() = items.count { it.selected }
@@ -70,6 +75,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var selection: Set<String> = emptySet()
     private var scanJob: Job? = null
     private var planJob: Job? = null
+    private val lastProgressAt = AtomicLong(0L)
 
     private val _state = MutableStateFlow(UiState(hasPermission = StoragePermission.isGranted(application)))
     val state: StateFlow<UiState> = _state.asStateFlow()
@@ -90,6 +96,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val canUndo = renamer.canUndo()
             _state.update { it.copy(canUndo = canUndo) }
         }
+        viewModelScope.launch(Dispatchers.IO) {
+            val parts = listOfNotNull(CrashReporter.consume(application), ExitReasonReporter.lastReport(application))
+            if (parts.isNotEmpty()) {
+                _state.update { it.copy(diagnostics = parts.joinToString("\n\n----\n\n")) }
+            }
+        }
+    }
+
+    fun dismissDiagnostics() {
+        _state.update { it.copy(diagnostics = null) }
     }
 
     fun refreshPermission() {
@@ -106,7 +122,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(scanning = true, progress = ScanProgress()) }
             try {
                 val result = scanner.scan(snapshot.root, snapshot.settings.deepScan) { progress ->
-                    _state.update { it.copy(progress = progress) }
+                    // Workers report very often; update the UI at most ~10 times per second.
+                    val now = SystemClock.elapsedRealtime()
+                    val finished = progress.total > 0 && progress.analyzed == progress.total
+                    if (finished || now - lastProgressAt.get() >= 100) {
+                        lastProgressAt.set(now)
+                        _state.update { it.copy(progress = progress) }
+                    }
                 }
                 detected = result
                 selection = result.map { it.id }.toSet()
@@ -224,7 +246,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         planJob?.cancel()
         planJob = viewModelScope.launch(Dispatchers.Default) {
             val snapshot = detected
-            val plans = RenamePlanner.plan(snapshot, _state.value.settings.rename)
+            val plans = try {
+                RenamePlanner.plan(snapshot, _state.value.settings.rename)
+            } catch (_: Exception) {
+                return@launch
+            }
             _state.update { st ->
                 st.copy(
                     items = snapshot.zip(plans) { d, p ->
