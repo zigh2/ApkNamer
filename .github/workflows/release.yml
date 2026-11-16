@@ -43,12 +43,19 @@ jobs:
             if [ -n "${BEFORE:-}" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
               CHANGED=$(git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- 'incoming/*.zip' || true)
             fi
-            if [ -z "$CHANGED" ]; then CHANGED=$(ls incoming/*.zip 2>/dev/null || true); fi
+            if [ -z "$CHANGED" ] && { [ -z "${BEFORE:-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; }; then
+              CHANGED=$(ls incoming/*.zip 2>/dev/null || true)
+            fi
             NAME=$(echo "$CHANGED" | sed 's#.*/##' | grep -v '^$' | sort -V | tail -n1 || true)
           fi
+          if [ -z "$NAME" ]; then
+            echo "No zip to process (for example, a zip was just deleted)."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           ZIP="incoming/$NAME"
-          if [ -z "$NAME" ] || [ ! -f "$ZIP" ]; then
-            echo "::error::No zip found in incoming/"; exit 1
+          if [ ! -f "$ZIP" ]; then
+            echo "::error::$ZIP not found"; exit 1
           fi
           VERSION=$(echo "$NAME" | grep -oE 'v[0-9]+(\.[0-9]+){1,2}' | tail -n1 | sed 's/^v//' || true)
           if [ -z "$VERSION" ]; then
@@ -57,6 +64,7 @@ jobs:
           IFS=. read -r MAJOR MINOR PATCH <<< "$VERSION"
           CODE=$(( MAJOR * 10000 + ${MINOR:-0} * 100 + ${PATCH:-0} ))
           {
+            echo "found=true"
             echo "zip=$ZIP"
             echo "name=$NAME"
             echo "version=$VERSION"
@@ -64,6 +72,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Replace project files with the zip contents
+        if: steps.pick.outputs.found == 'true'
         env:
           ZIP: ${{ steps.pick.outputs.zip }}
           VERSION: ${{ steps.pick.outputs.version }}
@@ -89,15 +98,18 @@ jobs:
           sed -i -E "s/versionName = \".*\"/versionName = \"${VERSION}\"/; s/versionCode = [0-9]+/versionCode = ${CODE}/" app/build.gradle.kts
 
       - uses: actions/setup-java@v4
+        if: steps.pick.outputs.found == 'true'
         with:
           distribution: temurin
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
+        if: steps.pick.outputs.found == 'true'
         with:
           gradle-version: "8.9"
 
       - name: Prepare signing key (optional)
+        if: steps.pick.outputs.found == 'true'
         id: sign
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -112,6 +124,7 @@ jobs:
           fi
 
       - name: Test and build the APK
+        if: steps.pick.outputs.found == 'true'
         env:
           VERSION: ${{ steps.pick.outputs.version }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -127,13 +140,17 @@ jobs:
           cp "$APK" "$RUNNER_TEMP/dist/ApkNamer.apk"
 
       - name: Commit the new project state
+        if: steps.pick.outputs.found == 'true'
         env:
           VERSION: ${{ steps.pick.outputs.version }}
           NAME: ${{ steps.pick.outputs.name }}
+          ZIP: ${{ steps.pick.outputs.zip }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # The zip has been consumed: remove it from incoming/ in the same commit.
+          git rm -q --ignore-unmatch -- "$ZIP"
           git add -A
           if git diff --cached --quiet; then
             echo "Project already identical to the zip; nothing to commit."
@@ -143,6 +160,7 @@ jobs:
           fi
 
       - name: Publish GitHub Release
+        if: steps.pick.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.pick.outputs.version }}
