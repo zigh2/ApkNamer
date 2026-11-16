@@ -3,8 +3,24 @@ updates:
   - package-ecosystem: gradle
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
+    ignore:
+      # These are tied to each other (Kotlin <-> Compose compiler, AGP <-> Gradle). Upgrade them by hand, together.
+      - dependency-name: "com.android.application"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "kotlin"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "org.jetbrains.kotlinx:kotlinx-coroutines-android"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "gradle-wrapper"
+    groups:
+      androidx:
+        patterns: ["androidx.*"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

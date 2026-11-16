@@ -23,9 +23,9 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -97,13 +97,13 @@ jobs:
           # Stamp the version from the zip name into the Gradle config.
           sed -i -E "s/versionName = \".*\"/versionName = \"${VERSION}\"/; s/versionCode = [0-9]+/versionCode = ${CODE}/" app/build.gradle.kts
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         if: steps.pick.outputs.found == 'true'
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         if: steps.pick.outputs.found == 'true'
         with:
           gradle-version: "8.9"
@@ -136,7 +136,7 @@ jobs:
           gradle testDebugUnitTest "$TASK" --stacktrace
           APK=$(ls app/build/outputs/apk/$DIR/*.apk | head -n1)
           mkdir -p "$RUNNER_TEMP/dist"
-          cp "$APK" "$RUNNER_TEMP/dist/ApkNamer-v${VERSION}.apk"
+          # A single, constant file name: the release tag already carries the version.
           cp "$APK" "$RUNNER_TEMP/dist/ApkNamer.apk"
 
       - name: Commit the new project state
@@ -154,10 +154,22 @@ jobs:
           git add -A
           if git diff --cached --quiet; then
             echo "Project already identical to the zip; nothing to commit."
-          else
-            git commit -m "Release v${VERSION}: replace project with ${NAME}"
-            git push origin HEAD:main
+            exit 0
           fi
+          git commit -q -m "Release v${VERSION}: replace project with ${NAME}"
+          git log -1 --stat | tail -n 5
+          # Rebase on the latest main and retry a few times, printing the real git error if it keeps failing.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "::warning::Push attempt $attempt failed; retrying"
+            sleep 5
+          done
+          echo "::error::Could not push the new project state to main (see the git messages above)"
+          exit 1
 
       - name: Publish GitHub Release
         if: steps.pick.outputs.found == 'true'
@@ -172,13 +184,17 @@ jobs:
           NOTES="Built automatically from incoming/${NAME}."
           if [ "$SIGNED" != "true" ]; then NOTES="$NOTES (debug-signed build: no release keystore configured)"; fi
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$RUNNER_TEMP"/dist/*.apk --clobber
+            # Keep exactly one APK per release: remove any other uploaded asset (e.g. from older versions of this workflow).
+            for ASSET in $(gh release view "$TAG" --json assets --jq '.assets[].name'); do
+              if [ "$ASSET" != "ApkNamer.apk" ]; then gh release delete-asset "$TAG" "$ASSET" --yes; fi
+            done
+            gh release upload "$TAG" "$RUNNER_TEMP/dist/ApkNamer.apk" --clobber
           else
-            gh release create "$TAG" "$RUNNER_TEMP"/dist/*.apk \
+            gh release create "$TAG" "$RUNNER_TEMP/dist/ApkNamer.apk" \
               --title "APK Namer $TAG" --notes "$NOTES" --target "$(git rev-parse HEAD)" --latest
           fi
           {
             echo "### APK Namer $TAG published"
-            echo "Direct link (always the newest): https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/ApkNamer.apk"
-            echo "This version: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/ApkNamer-${TAG}.apk"
+            echo "Latest: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/ApkNamer.apk"
+            echo "This version: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/ApkNamer.apk"
           } >> "$GITHUB_STEP_SUMMARY"
