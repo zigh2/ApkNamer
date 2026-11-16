@@ -3,51 +3,54 @@ package io.github.apknamer.ui
 import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,63 +58,50 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.apknamer.R
+import io.github.apknamer.data.parse.IconLoader
+import io.github.apknamer.domain.AppSettings
+import io.github.apknamer.domain.Filter
 import io.github.apknamer.domain.PackageType
 import io.github.apknamer.domain.PlanStatus
 import io.github.apknamer.domain.Problem
+import io.github.apknamer.domain.SortOrder
 import java.io.File
+
+private val FILTERS = listOf(
+    Filter.ALL, Filter.APK, Filter.XAPK, Filter.APKM, Filter.APKS, Filter.UPDATES, Filter.DUPLICATES,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
-    var showOptions by rememberSaveable { mutableStateOf(false) }
+fun MainScreen(
+    state: UiState,
+    vm: MainViewModel,
+    snackbar: SnackbarHostState,
+    onRequestPermission: () -> Unit,
+) {
     var showConfirm by rememberSaveable { mutableStateOf(false) }
-
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermission() }
-
-    LaunchedEffect(viewModel) {
-        viewModel.messages.collect { message ->
-            val text = context.getString(message.res, *message.args.toTypedArray())
-            val result = snackbarHostState.showSnackbar(
-                message = text,
-                actionLabel = if (message.undoable) context.getString(R.string.undo) else null,
-                duration = SnackbarDuration.Long,
-            )
-            if (result == SnackbarResult.ActionPerformed) viewModel.undo()
-        }
-    }
-
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) viewModel.onFolderPicked(uri)
+        if (uri != null) vm.onFolderPicked(uri)
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     if (state.canUndo && !state.busy) {
-                        TextButton(onClick = viewModel::undo) { Text(stringResource(R.string.undo_last)) }
+                        TextButton(onClick = vm::undo) { Text(stringResource(R.string.undo_last)) }
                     }
-                    IconButton(onClick = { showOptions = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.options))
+                    IconButton(onClick = vm::openSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 },
             )
@@ -122,8 +112,8 @@ fun MainScreen(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
                     selected = state.selectedCount,
                     ready = state.readyCount,
                     busy = state.busy,
-                    onSelectAll = viewModel::selectAll,
-                    onRename = { showConfirm = true },
+                    onSelectAll = vm::selectAll,
+                    onRename = { if (state.settings.confirmRename) showConfirm = true else vm.applyRename() },
                 )
             }
         },
@@ -134,60 +124,22 @@ fun MainScreen(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
             } else {
                 ResultsList(
                     state = state,
-                    onScan = viewModel::startScan,
-                    onStop = viewModel::cancelScan,
+                    loader = vm.iconLoader,
+                    onScan = vm::startScan,
+                    onStop = vm::cancelScan,
                     onDownloads = {
-                        viewModel.setRoot(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
+                        vm.setRoot(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS))
                     },
-                    onStorage = { viewModel.setRoot(Environment.getExternalStorageDirectory()) },
+                    onStorage = { vm.setRoot(Environment.getExternalStorageDirectory()) },
                     onChooseFolder = { folderPicker.launch(null) },
-                    onToggle = viewModel::toggle,
+                    onToggle = vm::toggle,
+                    onOpen = vm::openDetails,
+                    onQuery = vm::setQuery,
+                    onFilter = vm::setFilter,
+                    onSettings = { transform -> vm.updateSettings(transform) },
                 )
             }
         }
-    }
-
-    if (showOptions) {
-        OptionsSheet(
-            settings = state.settings,
-            onTemplate = viewModel::setTemplate,
-            onReplaceSpaces = viewModel::setReplaceSpaces,
-            onFixExtension = viewModel::setFixExtension,
-            onDeepScan = viewModel::setDeepScan,
-            onDismiss = { showOptions = false },
-        )
-    }
-
-    state.diagnostics?.let { report ->
-        val clipboard = LocalClipboardManager.current
-        AlertDialog(
-            onDismissRequest = viewModel::dismissDiagnostics,
-            title = { Text(stringResource(R.string.diag_title)) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.diag_body), style = MaterialTheme.typography.bodySmall)
-                    SelectionContainer {
-                        Text(
-                            report,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp,
-                            modifier = Modifier
-                                .padding(top = 8.dp)
-                                .heightIn(max = 280.dp)
-                                .verticalScroll(rememberScrollState()),
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { clipboard.setText(AnnotatedString(report)) }) {
-                    Text(stringResource(R.string.diag_copy))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissDiagnostics) { Text(stringResource(R.string.close)) }
-            },
-        )
     }
 
     if (showConfirm) {
@@ -198,7 +150,7 @@ fun MainScreen(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     showConfirm = false
-                    viewModel.applyRename()
+                    vm.applyRename()
                 }) { Text(stringResource(R.string.confirm_ok)) }
             },
             dismissButton = {
@@ -228,12 +180,17 @@ private fun PermissionContent(onGrant: () -> Unit) {
 @Composable
 private fun ResultsList(
     state: UiState,
+    loader: IconLoader,
     onScan: () -> Unit,
     onStop: () -> Unit,
     onDownloads: () -> Unit,
     onStorage: () -> Unit,
     onChooseFolder: () -> Unit,
     onToggle: (String) -> Unit,
+    onOpen: (String) -> Unit,
+    onQuery: (String) -> Unit,
+    onFilter: (Filter) -> Unit,
+    onSettings: ((AppSettings) -> AppSettings) -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
         item {
@@ -243,19 +200,26 @@ private fun ResultsList(
             item { ProgressBlock(state) }
         } else if (!state.hasScanned) {
             item { InfoBlock(R.string.empty_title, R.string.empty_body) }
-        } else if (state.items.isEmpty()) {
+        } else if (state.totalFound == 0) {
             item { InfoBlock(R.string.no_results_title, R.string.no_results_body) }
         } else {
+            item { SearchField(state.query, onQuery) }
+            item { FilterRow(state, onFilter, onSettings) }
             item {
                 Text(
-                    stringResource(R.string.found_count, state.items.size),
+                    if (state.items.size == state.totalFound) {
+                        stringResource(R.string.found_count, state.totalFound)
+                    } else {
+                        stringResource(R.string.found_count_filtered, state.items.size, state.totalFound)
+                    },
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
+            if (state.items.isEmpty()) item { InfoBlock(R.string.no_results_title, R.string.no_matches) }
         }
         items(state.items, key = { it.detected.id }) { item ->
-            ItemRow(item) { onToggle(item.detected.id) }
+            ItemRow(item, loader, state.settings, onToggle = { onToggle(item.detected.id) }, onOpen = { onOpen(item.detected.id) })
             HorizontalDivider()
         }
     }
@@ -275,7 +239,12 @@ private fun LocationCard(
     Card(Modifier.fillMaxWidth().padding(16.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.location_label), style = MaterialTheme.typography.labelMedium)
-            Text(root.path, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                rememberPrettyPath(root.path),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box {
                     OutlinedButton(onClick = { menuOpen = true }, enabled = !scanning) {
@@ -306,6 +275,97 @@ private fun LocationCard(
 }
 
 @Composable
+private fun SearchField(query: String, onQuery: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQuery,
+        singleLine = true,
+        placeholder = { Text(stringResource(R.string.search_hint)) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Clear, contentDescription = null) }
+            }
+        },
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    )
+}
+
+@Composable
+private fun FilterRow(
+    state: UiState,
+    onFilter: (Filter) -> Unit,
+    onSettings: ((AppSettings) -> AppSettings) -> Unit,
+) {
+    var sortOpen by remember { mutableStateOf(false) }
+    val settings = state.settings
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            Box {
+                AssistChip(
+                    onClick = { sortOpen = true },
+                    label = { Text(stringResource(R.string.sort_label, sortName(settings.sortOrder))) },
+                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+                )
+                DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
+                    SortOrder.entries.forEach { order ->
+                        DropdownMenuItem(
+                            text = { Text(sortName(order)) },
+                            leadingIcon = {
+                                if (order == settings.sortOrder) Icon(Icons.Default.Check, contentDescription = null)
+                            },
+                            onClick = {
+                                sortOpen = false
+                                onSettings { it.copy(sortOrder = order) }
+                            },
+                        )
+                    }
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.sort_descending)) },
+                        trailingIcon = { Checkbox(checked = settings.sortDescending, onCheckedChange = null) },
+                        onClick = { onSettings { it.copy(sortDescending = !it.sortDescending) } },
+                    )
+                }
+            }
+        }
+        items(FILTERS) { filter ->
+            FilterChip(
+                selected = state.filter == filter,
+                onClick = { onFilter(filter) },
+                label = { Text(filterLabel(filter)) },
+            )
+        }
+    }
+}
+
+@Composable
+fun sortName(order: SortOrder): String = stringResource(
+    when (order) {
+        SortOrder.NAME -> R.string.sort_name
+        SortOrder.APP_NAME -> R.string.sort_app
+        SortOrder.SIZE -> R.string.sort_size
+        SortOrder.DATE -> R.string.sort_date
+        SortOrder.VERSION -> R.string.sort_version
+    },
+)
+
+@Composable
+private fun filterLabel(filter: Filter): String = when (filter) {
+    Filter.ALL -> stringResource(R.string.filter_all)
+    Filter.APK -> "APK"
+    Filter.XAPK -> "XAPK"
+    Filter.APKM -> "APKM"
+    Filter.APKS -> "APKS"
+    Filter.UPDATES -> stringResource(R.string.filter_updates)
+    Filter.DUPLICATES -> stringResource(R.string.filter_duplicates)
+}
+
+@Composable
 private fun ProgressBlock(state: UiState) {
     val p = state.progress
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -332,26 +392,41 @@ private fun InfoBlock(title: Int, body: Int) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemRow(item: ItemUi, onToggle: () -> Unit) {
+private fun ItemRow(
+    item: ItemUi,
+    loader: IconLoader,
+    settings: AppSettings,
+    onToggle: () -> Unit,
+    onOpen: () -> Unit,
+) {
+    val context = LocalContext.current
     val ready = item.plan.status == PlanStatus.READY
     val meta = item.detected.metadata
     val currentName = item.detected.file.name
-    val versionText = meta?.versionName?.let { v ->
-        if (meta?.versionCode != null) "$v (${meta?.versionCode})" else v
-    }
-    val details = listOfNotNull(meta?.packageName, versionText).joinToString(" · ")
+    val versionCode = meta?.versionCode
+    val versionText = meta?.versionName?.let { v -> if (versionCode != null) "$v ($versionCode)" else v }
+    val details = listOfNotNull(
+        versionText,
+        formatSize(context, item.detected.size),
+        formatDate(context, item.detected.modified),
+    ).joinToString(" · ")
+    val folder = rememberPrettyPath(item.detected.file.parent.orEmpty())
 
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(enabled = ready, onClick = onToggle)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .clickable(onClick = onOpen)
+            .padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Checkbox(checked = item.selected, onCheckedChange = null, enabled = ready)
-        Column(Modifier.weight(1f)) {
+        Checkbox(checked = item.selected, onCheckedChange = { onToggle() }, enabled = ready)
+        if (settings.showIcons) {
+            AppIcon(item.detected, loader, 44.dp)
+            Spacer(Modifier.width(12.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = item.plan.target?.name ?: currentName,
                 style = MaterialTheme.typography.bodyLarge,
@@ -369,11 +444,18 @@ private fun ItemRow(item: ItemUi, onToggle: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (details.isNotEmpty()) {
+            Text(
+                text = details,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (settings.showPaths) {
                 Text(
-                    text = details,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = folder,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -381,15 +463,23 @@ private fun ItemRow(item: ItemUi, onToggle: () -> Unit) {
             statusText(item)?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
-        }
-        if (item.detected.type != PackageType.UNKNOWN) {
-            Text(
-                item.detected.type.extension.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (item.detected.type != PackageType.UNKNOWN) {
+                    Tag(
+                        item.detected.type.extension.uppercase(),
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                InstallTag(item.entry.install)
+                if (item.entry.duplicate) {
+                    Tag(
+                        stringResource(R.string.tag_duplicate),
+                        MaterialTheme.colorScheme.errorContainer,
+                        MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+            }
         }
     }
 }

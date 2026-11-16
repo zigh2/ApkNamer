@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.4]
+
+### Added
+- App icons in the list (loaded lazily, cached; bundles use their embedded `icon.png` when present).
+- Details screen: package, versions, min/target Android, permissions, signature SHA-256, size, dates, full path, bundle contents, per-file rename and quick actions.
+- Install state versus the device (installed / update / older) and duplicate detection.
+- Search, filter (type, updates, duplicates) and sort (name, app, size, date, version).
+- Settings as a separate page: theme (system/light/dark, dynamic colors, pure black), language (system/English/Arabic), scan, naming and list options.
+
+### Changed
+- Settings are stored in SharedPreferences (read synchronously) so theme and language apply on the first frame. Previous settings are reset once.
+- New `QUERY_ALL_PACKAGES` permission, used only to compare files with installed apps.
+
 ## [1.3]
 
 ### Changed

@@ -46,6 +46,8 @@ data class DetectedFile(
     val type: PackageType,
     val metadata: AppMetadata?,
     val problem: Problem? = null,
+    val size: Long = file.length(),
+    val modified: Long = file.lastModified(),
 ) {
     val id: String get() = file.absolutePath
 }
@@ -60,10 +62,23 @@ data class RenameOptions(
     val fixExtension: Boolean = true,
 )
 
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
 data class AppSettings(
     val rename: RenameOptions = RenameOptions(),
     val deepScan: Boolean = false,
+    val recursive: Boolean = true,
     val lastRoot: String? = null,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val dynamicColor: Boolean = true,
+    val pureBlack: Boolean = false,
+    /** "system" or a BCP-47 language tag such as "en" or "ar". */
+    val language: String = "system",
+    val showIcons: Boolean = true,
+    val showPaths: Boolean = true,
+    val sortOrder: SortOrder = SortOrder.NAME,
+    val sortDescending: Boolean = false,
+    val confirmRename: Boolean = true,
 )
 
 data class ScanProgress(val visited: Int = 0, val analyzed: Int = 0, val total: Int = 0)

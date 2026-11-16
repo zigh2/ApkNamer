@@ -1,5 +1,7 @@
 package io.github.apknamer.data.parse
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import io.github.apknamer.domain.AppMetadata
 import io.github.apknamer.domain.DetectedFile
 import io.github.apknamer.domain.PackageType
@@ -43,6 +45,77 @@ class ArchiveInspector(
         } catch (_: Exception) {
             if (declared) DetectedFile(file, extType, null, Problem.CORRUPT) else null
         }
+    }
+
+    /** Bundles (XAPK / APKM) usually ship their icon as `icon.png`; far cheaper than extracting the base APK. */
+    fun readEmbeddedIcon(file: File, targetPx: Int): Bitmap? =
+        try {
+            ZipFile(file).use { zip ->
+                val entry = zip.getEntry("icon.png")
+                if (entry == null || entry.size > MAX_ICON_BYTES) {
+                    null
+                } else {
+                    decodeScaled(zip.getInputStream(entry).use { it.readBytes() }, targetPx)
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+
+    /**
+     * Runs [block] with a plain APK for [file]: the file itself for an APK, otherwise the bundle's base APK
+     * extracted to a temporary file that is deleted afterwards.
+     */
+    fun <T> withBaseApk(file: File, packageName: String?, block: (File) -> T?): T? {
+        if (!ZipMagic.hasZipHeader(file)) return null
+        return try {
+            ZipFile(file).use { zip ->
+                if (zip.getEntry("AndroidManifest.xml") != null) {
+                    block(file)
+                } else {
+                    val entry = pickBase(apkEntries(zip), packageName)
+                    if (entry == null) {
+                        null
+                    } else {
+                        var tmp: File? = null
+                        try {
+                            cacheDir.mkdirs()
+                            val created = File.createTempFile("base_", ".apk", cacheDir)
+                            tmp = created
+                            zip.getInputStream(entry).use { input -> created.outputStream().use { input.copyTo(it) } }
+                            block(created)
+                        } finally {
+                            tmp?.delete()
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** The APK and OBB entries of a bundle, for the details screen. */
+    fun bundleEntries(file: File): List<BundleEntry> =
+        try {
+            ZipFile(file).use { zip ->
+                zip.entries().asSequence()
+                    .filter { !it.isDirectory && (it.name.endsWith(".apk", true) || it.name.endsWith(".obb", true)) }
+                    .map { BundleEntry(it.name, it.size) }
+                    .take(100)
+                    .toList()
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+    private fun decodeScaled(bytes: ByteArray, target: Int): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= target && bounds.outHeight / (sample * 2) >= target) sample *= 2
+        val options = BitmapFactory.Options().apply { inSampleSize = sample }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
     private fun inspectZip(file: File, zip: ZipFile, declared: Boolean): DetectedFile? {
@@ -131,6 +204,7 @@ class ArchiveInspector(
 
     private companion object {
         const val MAX_JSON_BYTES = 1L * 1024 * 1024
+        const val MAX_ICON_BYTES = 4L * 1024 * 1024
         val BASE_NAMES = setOf("base.apk", "base-master.apk", "standalone.apk")
     }
 }

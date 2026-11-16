@@ -1,45 +1,76 @@
 package io.github.apknamer.data.settings
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import io.github.apknamer.domain.AppSettings
 import io.github.apknamer.domain.NameTemplate
 import io.github.apknamer.domain.RenameOptions
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import io.github.apknamer.domain.SortOrder
+import io.github.apknamer.domain.ThemeMode
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+/**
+ * Settings live in SharedPreferences (not DataStore) on purpose: they are read synchronously at start-up,
+ * so the theme and language are correct on the very first frame, without a flash.
+ */
+class SettingsRepository(context: Context) {
+    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val _settings = MutableStateFlow(read())
+    val settings: StateFlow<AppSettings> = _settings.asStateFlow()
 
-class SettingsRepository(private val context: Context) {
-
-    val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
-        AppSettings(
-            rename = RenameOptions(
-                template = p[TEMPLATE] ?: NameTemplate.DEFAULT,
-                replaceSpaces = p[REPLACE_SPACES] ?: false,
-                fixExtension = p[FIX_EXTENSION] ?: true,
-            ),
-            deepScan = p[DEEP_SCAN] ?: false,
-            lastRoot = p[LAST_ROOT],
-        )
+    @Synchronized
+    fun update(transform: (AppSettings) -> AppSettings) {
+        val next = transform(_settings.value)
+        write(next)
+        _settings.value = next
     }
 
-    suspend fun setTemplate(value: String) = context.dataStore.edit { it[TEMPLATE] = value }
-    suspend fun setReplaceSpaces(value: Boolean) = context.dataStore.edit { it[REPLACE_SPACES] = value }
-    suspend fun setFixExtension(value: Boolean) = context.dataStore.edit { it[FIX_EXTENSION] = value }
-    suspend fun setDeepScan(value: Boolean) = context.dataStore.edit { it[DEEP_SCAN] = value }
-    suspend fun setRoot(path: String) = context.dataStore.edit { it[LAST_ROOT] = path }
+    private fun read() = AppSettings(
+        rename = RenameOptions(
+            template = prefs.getString("template", null) ?: NameTemplate.DEFAULT,
+            replaceSpaces = prefs.getBoolean("replace_spaces", false),
+            fixExtension = prefs.getBoolean("fix_extension", true),
+        ),
+        deepScan = prefs.getBoolean("deep_scan", false),
+        recursive = prefs.getBoolean("recursive", true),
+        lastRoot = prefs.getString("last_root", null),
+        themeMode = enumOf(prefs.getString("theme", null), ThemeMode.SYSTEM),
+        dynamicColor = prefs.getBoolean("dynamic_color", true),
+        pureBlack = prefs.getBoolean("pure_black", false),
+        language = prefs.getString(KEY_LANGUAGE, null) ?: "system",
+        showIcons = prefs.getBoolean("show_icons", true),
+        showPaths = prefs.getBoolean("show_paths", true),
+        sortOrder = enumOf(prefs.getString("sort", null), SortOrder.NAME),
+        sortDescending = prefs.getBoolean("sort_desc", false),
+        confirmRename = prefs.getBoolean("confirm_rename", true),
+    )
 
-    private companion object {
-        val TEMPLATE = stringPreferencesKey("template")
-        val REPLACE_SPACES = booleanPreferencesKey("replace_spaces")
-        val FIX_EXTENSION = booleanPreferencesKey("fix_extension")
-        val DEEP_SCAN = booleanPreferencesKey("deep_scan")
-        val LAST_ROOT = stringPreferencesKey("last_root")
+    private fun write(s: AppSettings) {
+        prefs.edit()
+            .putString("template", s.rename.template)
+            .putBoolean("replace_spaces", s.rename.replaceSpaces)
+            .putBoolean("fix_extension", s.rename.fixExtension)
+            .putBoolean("deep_scan", s.deepScan)
+            .putBoolean("recursive", s.recursive)
+            .putString("last_root", s.lastRoot)
+            .putString("theme", s.themeMode.name)
+            .putBoolean("dynamic_color", s.dynamicColor)
+            .putBoolean("pure_black", s.pureBlack)
+            .putString(KEY_LANGUAGE, s.language)
+            .putBoolean("show_icons", s.showIcons)
+            .putBoolean("show_paths", s.showPaths)
+            .putString("sort", s.sortOrder.name)
+            .putBoolean("sort_desc", s.sortDescending)
+            .putBoolean("confirm_rename", s.confirmRename)
+            .apply()
+    }
+
+    private inline fun <reified E : Enum<E>> enumOf(name: String?, default: E): E =
+        enumValues<E>().firstOrNull { it.name == name } ?: default
+
+    companion object {
+        const val PREFS_NAME = "settings"
+        const val KEY_LANGUAGE = "language"
     }
 }

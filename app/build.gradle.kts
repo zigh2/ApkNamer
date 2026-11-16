@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.apknamer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10300
-        versionName = "1.3"
+        versionCode = 10400
+        versionName = "1.4"
     }
 
     signingConfigs {
@@ -69,7 +69,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(platform(libs.compose.bom))

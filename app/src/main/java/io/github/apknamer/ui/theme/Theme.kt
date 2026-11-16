@@ -1,7 +1,6 @@
 package io.github.apknamer.ui.theme
 
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -21,13 +20,21 @@ private val Dark = darkColorScheme(
 )
 
 @Composable
-fun ApkNamerTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun ApkNamerTheme(
+    darkTheme: Boolean,
+    dynamicColor: Boolean,
+    pureBlack: Boolean,
+    content: @Composable () -> Unit,
+) {
     val context = LocalContext.current
-    val scheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+    var scheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         darkTheme -> Dark
         else -> Light
+    }
+    if (darkTheme && pureBlack) {
+        scheme = scheme.copy(background = Color.Black, surface = Color.Black)
     }
     MaterialTheme(colorScheme = scheme, content = content)
 }

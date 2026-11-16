@@ -21,7 +21,9 @@ once apps became split bundles.
 - **Flexible templates** – `{name}< v{version}>< ({code})>` with live preview and presets.
 - **Safe** – never overwrites, resolves duplicates (`… (2).apk`), previews every new name, and **undo** for the last batches.
 - **Private** – no `INTERNET` permission, no analytics, nothing leaves the device.
-- **Localised** – English and Arabic (full RTL support).
+- **Rich list** – app icons, size, date, folder path; search, filter (type / updates / duplicates) and sort.
+- **Details page** – package, versions, min/target Android, permissions, signature SHA-256, bundle contents, install state vs. your device.
+- **Customisable** – light/dark/system theme, dynamic colors, pure black, in-app language (English / Arabic with full RTL).
 
 ## Supported formats and where metadata comes from
 

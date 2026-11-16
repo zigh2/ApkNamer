@@ -29,13 +29,14 @@ class FileScanner(
     suspend fun scan(
         root: File,
         deep: Boolean,
+        recursive: Boolean,
         onProgress: (ScanProgress) -> Unit,
     ): List<DetectedFile> = withContext(Dispatchers.IO) {
         val candidates = ArrayList<Pair<File, Boolean>>()
         var visited = 0
 
         root.walkTopDown()
-            .maxDepth(MAX_DEPTH)
+            .maxDepth(if (recursive) MAX_DEPTH else 1)
             .onEnter { dir -> dir == root || !isIgnoredDirectory(dir) }
             .forEach { f ->
                 ensureActive()
