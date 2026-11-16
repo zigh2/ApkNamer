@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.3]
+
+### Changed
+- The release workflow now deletes the processed zip from `incoming/` after a successful release, and ignores pushes that contain no new zip (e.g. the deletion itself).
+
+## [1.2]
+
+### Fixed
+- Crash when opening Options or finishing a scan: a name-template regex had an unescaped `}`, which Android's ICU regex engine rejects (the JVM used by unit tests accepts it).
+
 ## [1.1]
 
 ### Added

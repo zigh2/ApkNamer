@@ -21,3 +21,7 @@ Thanks for helping improve APK Namer!
 
 ## Reporting bugs
 Use the issue templates. For unreadable packages, please say which app/store the file came from and the output of `unzip -l yourfile` (no need to attach the file itself).
+
+## Regex note
+Android uses the ICU regex engine, which is stricter than the JVM used by unit tests: always escape `{`, `}`, `[`, `]`
+(e.g. `\{`, `\}`, `\]`) even where java.util.regex tolerates them.

@@ -14,7 +14,7 @@ object NameTemplate {
 
     private val tokenRegex = Regex("""\{(\w+)\}""")
     private val groupRegex = Regex("""<([^<>]*)>""")
-    private val emptyBrackets = Regex("""\(\s*\)|\[\s*]|\{\s*}""")
+    private val emptyBrackets = Regex("""\(\s*\)|\[\s*\]|\{\s*\}""")
     private val manySpaces = Regex("""\s{2,}""")
 
     fun unknownTokens(template: String): List<String> =
