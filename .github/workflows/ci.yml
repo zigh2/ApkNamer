@@ -22,8 +22,25 @@ jobs:
         with:
           gradle-version: "8.9"
       - name: Unit tests, lint and debug build
-        run: gradle testDebugUnitTest lintDebug assembleDebug --stacktrace
-      - uses: actions/upload-artifact@v5
+        run: gradle testDebugUnitTest lintDebug assembleDebug --continue --stacktrace
+
+      # The reports only exist on the temporary runner; keep them so they can be downloaded.
+      - name: Print the lint report in the log
+        if: always()
+        run: |
+          F=app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
+          if [ -f "$F" ]; then cat "$F"; else echo "No lint text report found"; fi
+      - name: Upload reports (lint, tests)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: reports
+          path: app/build/reports/
+          if-no-files-found: warn
+      - name: Upload debug APK
+        if: always()
+        uses: actions/upload-artifact@v5
         with:
           name: apk-namer-debug
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore
