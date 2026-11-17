@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -32,14 +32,14 @@ jobs:
           if [ -f "$F" ]; then cat "$F"; else echo "No lint text report found"; fi
       - name: Upload reports (lint, tests)
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: reports
           path: app/build/reports/
           if-no-files-found: warn
       - name: Upload debug APK
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: apk-namer-debug
           path: app/build/outputs/apk/debug/*.apk
