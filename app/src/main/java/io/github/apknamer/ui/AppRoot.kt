@@ -40,7 +40,12 @@ fun AppRoot(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
 
     LaunchedEffect(viewModel) {
         viewModel.messages.collect { message ->
-            val text = context.getString(message.res, *message.args.toTypedArray())
+            val args = message.args.toTypedArray()
+            val text = if (message.plural != 0) {
+                context.resources.getQuantityString(message.plural, message.quantity, *args)
+            } else {
+                context.getString(message.res, *args)
+            }
             val result = snackbarHostState.showSnackbar(
                 message = text,
                 actionLabel = if (message.undoable) context.getString(R.string.undo) else null,

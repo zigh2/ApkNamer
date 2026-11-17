@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.apknamer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10700
-        versionName = "1.7"
+        versionCode = 10800
+        versionName = "1.8"
     }
 
     signingConfigs {
@@ -55,6 +55,8 @@ android {
     lint {
         abortOnError = true
         warningsAsErrors = false
+        // Library updates are handled by Dependabot; keep reports readable.
+        disable += "GradleDependency"
     }
     testOptions {
         unitTests.isReturnDefaultValues = true

@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import android.os.Environment
 import android.os.SystemClock
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -89,10 +90,13 @@ data class UiState(
     val selectedCount: Int get() = items.count { it.selected }
 }
 
+/** Either a plain string ([res]) or a plural ([plural] + [quantity]); [args] are the format arguments. */
 data class UiMessage(
-    @StringRes val res: Int,
+    @StringRes val res: Int = 0,
     val args: List<Any> = emptyList(),
     val undoable: Boolean = false,
+    @PluralsRes val plural: Int = 0,
+    val quantity: Int = 0,
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -309,9 +313,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(busy = false, canUndo = it.canUndo || moved > 0) }
             _messages.trySend(
                 if (report.failed == 0) {
-                    UiMessage(R.string.msg_renamed, listOf(moved), undoable = moved > 0)
+                    UiMessage(args = listOf(moved), undoable = moved > 0, plural = R.plurals.msg_renamed, quantity = moved)
                 } else {
-                    UiMessage(R.string.msg_renamed_failed, listOf(moved, report.failed), undoable = moved > 0)
+                    UiMessage(
+                        args = listOf(moved, report.failed), undoable = moved > 0,
+                        plural = R.plurals.msg_renamed_failed, quantity = moved,
+                    )
                 },
             )
         }
@@ -324,7 +331,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val report = renamer.undoLast()
             if (report != null) {
                 applyReport(report, selectResult = true)
-                _messages.trySend(UiMessage(R.string.msg_undone, listOf(report.records.size)))
+                _messages.trySend(UiMessage(args = listOf(report.records.size), plural = R.plurals.msg_undone, quantity = report.records.size))
             }
             val canUndo = renamer.canUndo()
             _state.update { it.copy(busy = false, canUndo = canUndo) }
@@ -373,8 +380,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(busy = false) }
             _messages.trySend(
                 when {
-                    failed == 0 -> UiMessage(R.string.msg_deleted, listOf(maxOf(removed, 1)))
-                    removed > 0 -> UiMessage(R.string.msg_deleted_failed, listOf(removed, failed))
+                    failed == 0 -> maxOf(removed, 1).let { n ->
+                        UiMessage(args = listOf(n), plural = R.plurals.msg_deleted, quantity = n)
+                    }
+                    removed > 0 -> UiMessage(
+                        args = listOf(removed, failed), plural = R.plurals.msg_deleted_failed, quantity = removed,
+                    )
                     else -> UiMessage(R.string.msg_delete_failed)
                 },
             )

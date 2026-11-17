@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+
 package io.github.apknamer.ui
 
 import android.os.Environment
@@ -62,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -158,7 +161,7 @@ fun MainScreen(
             title = { Text(stringResource(R.string.cleanup_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.cleanup_body, plan.delete.size, formatSize(context, plan.bytes)))
+                    Text(pluralStringResource(R.plurals.cleanup_body, plan.delete.size, plan.delete.size, formatSize(context, plan.bytes)))
                     val preview = plan.delete.take(15).joinToString("\n") { it.file.name }
                     val more = plan.delete.size - 15
                     Text(
@@ -185,7 +188,7 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = { showConfirm = false },
             title = { Text(stringResource(R.string.confirm_title)) },
-            text = { Text(stringResource(R.string.confirm_body, state.selectedCount)) },
+            text = { Text(pluralStringResource(R.plurals.confirm_body, state.selectedCount, state.selectedCount)) },
             confirmButton = {
                 TextButton(onClick = {
                     showConfirm = false
@@ -249,9 +252,9 @@ private fun ResultsList(
             item {
                 Text(
                     if (state.items.size == state.totalFound) {
-                        stringResource(R.string.found_count, state.totalFound)
+                        pluralStringResource(R.plurals.found_count, state.totalFound, state.totalFound)
                     } else {
-                        stringResource(R.string.found_count_filtered, state.items.size, state.totalFound)
+                        pluralStringResource(R.plurals.found_count_filtered, state.totalFound, state.items.size, state.totalFound)
                     },
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -428,7 +431,7 @@ private fun ProgressBlock(state: UiState) {
             Text(stringResource(R.string.analyze_progress, p.analyzed, p.total), style = MaterialTheme.typography.bodySmall)
         } else {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            Text(stringResource(R.string.scan_progress, p.visited), style = MaterialTheme.typography.bodySmall)
+            Text(pluralStringResource(R.plurals.scan_progress, p.visited, p.visited), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -614,7 +617,7 @@ private fun CleanupCard(plan: CleanupPlan, onCleanup: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                stringResource(R.string.cleanup_summary, plan.delete.size, formatSize(context, plan.bytes)),
+                pluralStringResource(R.plurals.cleanup_summary, plan.delete.size, plan.delete.size, formatSize(context, plan.bytes)),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )

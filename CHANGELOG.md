@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.8]
+
+### Changed
+- Counts are now proper plurals (English one/other, Arabic zero/one/two/few/many/other), so messages read correctly in both languages ("ملف واحد", "ملفان", "3 ملفات", "11 ملفاً").
+- Lint clean-up: `mipmap-anydpi-v26` merged into `mipmap-anydpi` (minSdk is 26), explicit handling of the backup-rules and in-app-language warnings, library-version notices left to Dependabot.
+- CI can be started manually (Actions → CI → Run workflow).
+
 ## [1.7]
 
 ### Added

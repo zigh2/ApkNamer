@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+
 package io.github.apknamer.ui
 
 import android.content.ActivityNotFoundException
@@ -45,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -168,7 +171,7 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, snackbar: SnackbarHostState
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    stringResource(R.string.permissions_count, apk.permissions.size),
+                                    pluralStringResource(R.plurals.permissions_count, apk.permissions.size, apk.permissions.size),
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f),
                                 )

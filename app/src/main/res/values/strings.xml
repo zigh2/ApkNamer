@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">APK Namer</string>
 
     <string name="permission_title">Storage access needed</string>
@@ -14,18 +14,16 @@
 
     <string name="scan">Scan</string>
     <string name="scan_stop">Stop</string>
-    <string name="scan_progress">Scanning… %1$d files checked</string>
     <string name="analyze_progress">Analyzing %1$d of %2$d</string>
 
     <string name="empty_title">No results yet</string>
     <string name="empty_body">Pick a folder and tap Scan.</string>
     <string name="no_results_title">Nothing found</string>
     <string name="no_results_body">No app packages were found here. Try Deep scan in Options.</string>
-    <string name="found_count">%1$d packages found</string>
 
     <string name="select_all">Select all</string>
     <string name="select_none">Select none</string>
-    <string name="selected_of">%1$d of %2$d selected</string>
+    <string name="selected_of" tools:ignore="PluralsCandidate">%1$d of %2$d selected</string>
     <string name="rename_n">Rename %1$d</string>
 
     <string name="problem_not_archive">Not a valid archive</string>
@@ -35,13 +33,8 @@
     <string name="status_unchanged">Already named correctly</string>
 
     <string name="confirm_title">Rename files?</string>
-    <string name="confirm_body">%1$d files will be renamed. You can undo the last batch.</string>
     <string name="confirm_ok">Rename</string>
     <string name="cancel">Cancel</string>
-
-    <string name="msg_renamed">Renamed %1$d files</string>
-    <string name="msg_renamed_failed">Renamed %1$d files, %2$d failed</string>
-    <string name="msg_undone">Restored %1$d files</string>
     <string name="msg_scan_failed">Scan failed</string>
     <string name="msg_folder_unsupported">This folder isn\'t supported. Choose a folder on internal storage or an SD card.</string>
     <string name="undo">Undo</string>
@@ -74,7 +67,6 @@
     <string name="sort_date">Date</string>
     <string name="sort_version">Version</string>
     <string name="sort_descending">Descending order</string>
-    <string name="found_count_filtered">%1$d of %2$d packages</string>
     <string name="no_matches">No packages match your search or filter.</string>
     <string name="tag_installed">Installed</string>
     <string name="tag_update">Update</string>
@@ -97,7 +89,6 @@
     <string name="label_signature">Signature (SHA-256)</string>
     <string name="label_permissions">Permissions</string>
     <string name="permissions_none">None</string>
-    <string name="permissions_count">%1$d permissions</string>
     <string name="show_all">Show all</string>
     <string name="hide">Hide</string>
     <string name="installed_none">Not installed</string>
@@ -167,18 +158,63 @@
     <string name="duplicates_title">Duplicate files (%1$d)</string>
     <string name="duplicates_hint">Same app and same version. After each deletion, all of them are checked again.</string>
     <string name="tag_this_file">This file</string>
-    <string name="msg_deleted">Deleted %1$d files</string>
     <string name="msg_delete_failed">Couldn\'t delete the file</string>
     <string name="open_folder_failed">No file manager could open the folder. The path was copied instead.</string>
 
     <string name="cleanup_title">Remove duplicates?</string>
-    <string name="cleanup_body">%1$d duplicate files will be deleted, freeing %2$s. In each group the file that is already named correctly (otherwise the newest) is kept. This cannot be undone.</string>
     <string name="cleanup_more">… and %1$d more</string>
     <string name="cleanup_button">Remove duplicates</string>
-    <string name="cleanup_summary">%1$d duplicate files can be removed (%2$s)</string>
     <string name="stats_total">Total size: %1$s</string>
-    <string name="msg_deleted_failed">Deleted %1$d files, %2$d failed</string>
     <string name="auto_scan">Scan automatically on launch</string>
     <string name="label_file_hash">File SHA-256</string>
     <string name="action_hash">Calculate SHA-256</string>
+
+    <plurals name="scan_progress">
+        <item quantity="one">Scanning… %1$d file checked</item>
+        <item quantity="other">Scanning… %1$d files checked</item>
+    </plurals>
+    <plurals name="found_count">
+        <item quantity="one">%1$d package found</item>
+        <item quantity="other">%1$d packages found</item>
+    </plurals>
+    <plurals name="found_count_filtered">
+        <item quantity="one">%1$d of %2$d package</item>
+        <item quantity="other">%1$d of %2$d packages</item>
+    </plurals>
+    <plurals name="confirm_body">
+        <item quantity="one">%1$d file will be renamed. You can undo the last batch.</item>
+        <item quantity="other">%1$d files will be renamed. You can undo the last batch.</item>
+    </plurals>
+    <plurals name="msg_renamed">
+        <item quantity="one">Renamed %1$d file</item>
+        <item quantity="other">Renamed %1$d files</item>
+    </plurals>
+    <plurals name="msg_renamed_failed">
+        <item quantity="one">Renamed %1$d file, %2$d failed</item>
+        <item quantity="other">Renamed %1$d files, %2$d failed</item>
+    </plurals>
+    <plurals name="msg_undone">
+        <item quantity="one">Restored %1$d file</item>
+        <item quantity="other">Restored %1$d files</item>
+    </plurals>
+    <plurals name="msg_deleted">
+        <item quantity="one">Deleted %1$d file</item>
+        <item quantity="other">Deleted %1$d files</item>
+    </plurals>
+    <plurals name="msg_deleted_failed">
+        <item quantity="one">Deleted %1$d file, %2$d failed</item>
+        <item quantity="other">Deleted %1$d files, %2$d failed</item>
+    </plurals>
+    <plurals name="permissions_count">
+        <item quantity="one">%1$d permission</item>
+        <item quantity="other">%1$d permissions</item>
+    </plurals>
+    <plurals name="cleanup_body">
+        <item quantity="one">%1$d duplicate file will be deleted, freeing %2$s. In each group the file that is already named correctly (otherwise the newest) is kept. This cannot be undone.</item>
+        <item quantity="other">%1$d duplicate files will be deleted, freeing %2$s. In each group the file that is already named correctly (otherwise the newest) is kept. This cannot be undone.</item>
+    </plurals>
+    <plurals name="cleanup_summary">
+        <item quantity="one">%1$d duplicate file can be removed (%2$s)</item>
+        <item quantity="other">%1$d duplicate files can be removed (%2$s)</item>
+    </plurals>
 </resources>

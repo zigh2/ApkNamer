@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">APK Namer</string>
 
     <string name="permission_title">نحتاج إلى صلاحية الوصول للملفات</string>
@@ -14,18 +14,16 @@
 
     <string name="scan">بحث</string>
     <string name="scan_stop">إيقاف</string>
-    <string name="scan_progress">جارٍ البحث… تم فحص %1$d ملف</string>
     <string name="analyze_progress">جارٍ التحليل %1$d من %2$d</string>
 
     <string name="empty_title">لا توجد نتائج بعد</string>
     <string name="empty_body">اختر مجلداً ثم اضغط «بحث».</string>
     <string name="no_results_title">لم يُعثر على شيء</string>
     <string name="no_results_body">لا توجد حزم تطبيقات هنا. جرّب «الفحص العميق» من الخيارات.</string>
-    <string name="found_count">تم العثور على %1$d حزمة</string>
 
     <string name="select_all">تحديد الكل</string>
     <string name="select_none">إلغاء التحديد</string>
-    <string name="selected_of">تم تحديد %1$d من %2$d</string>
+    <string name="selected_of" tools:ignore="PluralsCandidate">تم تحديد %1$d من %2$d</string>
     <string name="rename_n">إعادة تسمية %1$d</string>
 
     <string name="problem_not_archive">الملف ليس أرشيفاً صالحاً</string>
@@ -35,13 +33,8 @@
     <string name="status_unchanged">الاسم مطابق بالفعل</string>
 
     <string name="confirm_title">إعادة تسمية الملفات؟</string>
-    <string name="confirm_body">ستتم إعادة تسمية %1$d ملف. يمكنك التراجع عن آخر دفعة.</string>
     <string name="confirm_ok">إعادة التسمية</string>
     <string name="cancel">إلغاء</string>
-
-    <string name="msg_renamed">تمت إعادة تسمية %1$d ملف</string>
-    <string name="msg_renamed_failed">تمت إعادة تسمية %1$d ملف وفشل %2$d</string>
-    <string name="msg_undone">تمت استعادة %1$d ملف</string>
     <string name="msg_scan_failed">فشل البحث</string>
     <string name="msg_folder_unsupported">هذا المجلد غير مدعوم. اختر مجلداً في التخزين الداخلي أو بطاقة SD.</string>
     <string name="undo">تراجع</string>
@@ -74,7 +67,6 @@
     <string name="sort_date">التاريخ</string>
     <string name="sort_version">الإصدار</string>
     <string name="sort_descending">ترتيب تنازلي</string>
-    <string name="found_count_filtered">%1$d من %2$d حزمة</string>
     <string name="no_matches">لا توجد حزم مطابقة للبحث أو التصفية.</string>
     <string name="tag_installed">مثبّت</string>
     <string name="tag_update">تحديث</string>
@@ -97,7 +89,6 @@
     <string name="label_signature">التوقيع (SHA-256)</string>
     <string name="label_permissions">الصلاحيات</string>
     <string name="permissions_none">لا شيء</string>
-    <string name="permissions_count">%1$d صلاحية</string>
     <string name="show_all">عرض الكل</string>
     <string name="hide">إخفاء</string>
     <string name="installed_none">غير مثبّت</string>
@@ -167,18 +158,111 @@
     <string name="duplicates_title">الملفات المكررة (%1$d)</string>
     <string name="duplicates_hint">نفس التطبيق ونفس الإصدار. بعد كل عملية حذف يُعاد التحقق من وجود جميعها.</string>
     <string name="tag_this_file">هذا الملف</string>
-    <string name="msg_deleted">تم حذف %1$d ملف</string>
     <string name="msg_delete_failed">تعذّر حذف الملف</string>
     <string name="open_folder_failed">لا يوجد مدير ملفات يستطيع فتح المجلد. تم نسخ المسار بدلاً من ذلك.</string>
 
     <string name="cleanup_title">إزالة المكررات؟</string>
-    <string name="cleanup_body">سيتم حذف %1$d ملف مكرر وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</string>
     <string name="cleanup_more">… و%1$d أخرى</string>
     <string name="cleanup_button">إزالة المكررات</string>
-    <string name="cleanup_summary">يمكن إزالة %1$d ملف مكرر (%2$s)</string>
     <string name="stats_total">الحجم الإجمالي: %1$s</string>
-    <string name="msg_deleted_failed">تم حذف %1$d ملف وفشل %2$d</string>
     <string name="auto_scan">البحث تلقائياً عند فتح التطبيق</string>
     <string name="label_file_hash">بصمة الملف SHA-256</string>
     <string name="action_hash">احسب بصمة SHA-256</string>
+
+    <plurals name="scan_progress" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">جارٍ البحث… لم يُفحص أي ملف</item>
+        <item quantity="one">جارٍ البحث… تم فحص ملف واحد</item>
+        <item quantity="two">جارٍ البحث… تم فحص ملفين</item>
+        <item quantity="few">جارٍ البحث… تم فحص %1$d ملفات</item>
+        <item quantity="many">جارٍ البحث… تم فحص %1$d ملفاً</item>
+        <item quantity="other">جارٍ البحث… تم فحص %1$d ملف</item>
+    </plurals>
+    <plurals name="found_count" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم يُعثر على أي حزمة</item>
+        <item quantity="one">تم العثور على حزمة واحدة</item>
+        <item quantity="two">تم العثور على حزمتين</item>
+        <item quantity="few">تم العثور على %1$d حزم</item>
+        <item quantity="many">تم العثور على %1$d حزمة</item>
+        <item quantity="other">تم العثور على %1$d حزمة</item>
+    </plurals>
+    <plurals name="found_count_filtered" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">%1$d من %2$d حزمة</item>
+        <item quantity="one">%1$d من حزمة واحدة</item>
+        <item quantity="two">%1$d من حزمتين</item>
+        <item quantity="few">%1$d من %2$d حزم</item>
+        <item quantity="many">%1$d من %2$d حزمة</item>
+        <item quantity="other">%1$d من %2$d حزمة</item>
+    </plurals>
+    <plurals name="confirm_body" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لن يتم تغيير اسم أي ملف.</item>
+        <item quantity="one">سيتم تغيير اسم ملف واحد. يمكنك التراجع عن آخر دفعة.</item>
+        <item quantity="two">سيتم تغيير اسم ملفين. يمكنك التراجع عن آخر دفعة.</item>
+        <item quantity="few">سيتم تغيير اسم %1$d ملفات. يمكنك التراجع عن آخر دفعة.</item>
+        <item quantity="many">سيتم تغيير اسم %1$d ملفاً. يمكنك التراجع عن آخر دفعة.</item>
+        <item quantity="other">سيتم تغيير اسم %1$d ملف. يمكنك التراجع عن آخر دفعة.</item>
+    </plurals>
+    <plurals name="msg_renamed" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم تتم إعادة تسمية أي ملف</item>
+        <item quantity="one">تمت إعادة تسمية ملف واحد</item>
+        <item quantity="two">تمت إعادة تسمية ملفين</item>
+        <item quantity="few">تمت إعادة تسمية %1$d ملفات</item>
+        <item quantity="many">تمت إعادة تسمية %1$d ملفاً</item>
+        <item quantity="other">تمت إعادة تسمية %1$d ملف</item>
+    </plurals>
+    <plurals name="msg_renamed_failed" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم تتم إعادة تسمية أي ملف وفشل %2$d</item>
+        <item quantity="one">تمت إعادة تسمية ملف واحد وفشل %2$d</item>
+        <item quantity="two">تمت إعادة تسمية ملفين وفشل %2$d</item>
+        <item quantity="few">تمت إعادة تسمية %1$d ملفات وفشل %2$d</item>
+        <item quantity="many">تمت إعادة تسمية %1$d ملفاً وفشل %2$d</item>
+        <item quantity="other">تمت إعادة تسمية %1$d ملف وفشل %2$d</item>
+    </plurals>
+    <plurals name="msg_undone" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم تتم استعادة أي ملف</item>
+        <item quantity="one">تمت استعادة ملف واحد</item>
+        <item quantity="two">تمت استعادة ملفين</item>
+        <item quantity="few">تمت استعادة %1$d ملفات</item>
+        <item quantity="many">تمت استعادة %1$d ملفاً</item>
+        <item quantity="other">تمت استعادة %1$d ملف</item>
+    </plurals>
+    <plurals name="msg_deleted" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم يُحذف أي ملف</item>
+        <item quantity="one">تم حذف ملف واحد</item>
+        <item quantity="two">تم حذف ملفين</item>
+        <item quantity="few">تم حذف %1$d ملفات</item>
+        <item quantity="many">تم حذف %1$d ملفاً</item>
+        <item quantity="other">تم حذف %1$d ملف</item>
+    </plurals>
+    <plurals name="msg_deleted_failed" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم يُحذف أي ملف وفشل %2$d</item>
+        <item quantity="one">تم حذف ملف واحد وفشل %2$d</item>
+        <item quantity="two">تم حذف ملفين وفشل %2$d</item>
+        <item quantity="few">تم حذف %1$d ملفات وفشل %2$d</item>
+        <item quantity="many">تم حذف %1$d ملفاً وفشل %2$d</item>
+        <item quantity="other">تم حذف %1$d ملف وفشل %2$d</item>
+    </plurals>
+    <plurals name="permissions_count" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">بلا صلاحيات</item>
+        <item quantity="one">صلاحية واحدة</item>
+        <item quantity="two">صلاحيتان</item>
+        <item quantity="few">%1$d صلاحيات</item>
+        <item quantity="many">%1$d صلاحية</item>
+        <item quantity="other">%1$d صلاحية</item>
+    </plurals>
+    <plurals name="cleanup_body" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لا توجد ملفات مكررة للحذف.</item>
+        <item quantity="one">سيتم حذف ملف مكرر واحد وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
+        <item quantity="two">سيتم حذف ملفين مكررين وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
+        <item quantity="few">سيتم حذف %1$d ملفات مكررة وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
+        <item quantity="many">سيتم حذف %1$d ملفاً مكرراً وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
+        <item quantity="other">سيتم حذف %1$d ملف مكرر وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
+    </plurals>
+    <plurals name="cleanup_summary" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لا توجد ملفات مكررة</item>
+        <item quantity="one">يمكن إزالة ملف مكرر واحد (%2$s)</item>
+        <item quantity="two">يمكن إزالة ملفين مكررين (%2$s)</item>
+        <item quantity="few">يمكن إزالة %1$d ملفات مكررة (%2$s)</item>
+        <item quantity="many">يمكن إزالة %1$d ملفاً مكرراً (%2$s)</item>
+        <item quantity="other">يمكن إزالة %1$d ملف مكرر (%2$s)</item>
+    </plurals>
 </resources>
