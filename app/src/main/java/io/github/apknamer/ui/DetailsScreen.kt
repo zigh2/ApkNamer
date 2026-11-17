@@ -229,6 +229,13 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, snackbar: SnackbarHostState
                 )
                 InfoRow(stringResource(R.string.label_modified), formatDate(context, file.modified))
                 InfoRow(stringResource(R.string.label_format), file.type.extension.uppercase().ifEmpty { null })
+                if (state.fileHash != null) {
+                    InfoRow(stringResource(R.string.label_file_hash), state.fileHash, mono = true)
+                } else if (state.hashing) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                } else {
+                    TextButton(onClick = vm::computeHash) { Text(stringResource(R.string.action_hash)) }
+                }
             }
 
             // Duplicates

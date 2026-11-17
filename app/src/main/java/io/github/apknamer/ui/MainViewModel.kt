@@ -12,6 +12,7 @@ import io.github.apknamer.data.parse.ApkMetadataReader
 import io.github.apknamer.data.parse.ArchiveInspector
 import io.github.apknamer.data.parse.DetailsLoader
 import io.github.apknamer.data.parse.FileDetails
+import io.github.apknamer.data.parse.FileHasher
 import io.github.apknamer.data.parse.IconLoader
 import io.github.apknamer.data.parse.InstalledApps
 import io.github.apknamer.data.rename.RenameHistory
@@ -24,7 +25,9 @@ import io.github.apknamer.data.storage.TreeUriPath
 import io.github.apknamer.diagnostics.CrashReporter
 import io.github.apknamer.diagnostics.ExitReasonReporter
 import io.github.apknamer.domain.AppSettings
+import io.github.apknamer.domain.CleanupPlan
 import io.github.apknamer.domain.DetectedFile
+import io.github.apknamer.domain.DuplicateCleanup
 import io.github.apknamer.domain.Duplicates
 import io.github.apknamer.domain.Entry
 import io.github.apknamer.domain.EntryQuery
@@ -66,6 +69,8 @@ data class UiState(
     /** The visible rows: after search, filter and sort. */
     val items: List<ItemUi> = emptyList(),
     val totalFound: Int = 0,
+    val totalBytes: Long = 0,
+    val cleanup: CleanupPlan = DuplicateCleanup.EMPTY,
     val query: String = "",
     val filter: Filter = Filter.ALL,
     val busy: Boolean = false,
@@ -77,6 +82,8 @@ data class UiState(
     val detailsDuplicates: List<Entry> = emptyList(),
     val details: FileDetails? = null,
     val detailsLoading: Boolean = false,
+    val fileHash: String? = null,
+    val hashing: Boolean = false,
 ) {
     val readyCount: Int get() = items.count { it.plan.status == PlanStatus.READY }
     val selectedCount: Int get() = items.count { it.selected }
@@ -106,6 +113,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var scanJob: Job? = null
     private var planJob: Job? = null
     private var detailsJob: Job? = null
+    private var hashJob: Job? = null
     private val lastProgressAt = AtomicLong(0L)
 
     private val _state = MutableStateFlow(
@@ -142,6 +150,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _state.update { it.copy(diagnostics = parts.joinToString("\n\n----\n\n")) }
             }
         }
+        if (_state.value.hasPermission && _state.value.settings.autoScan) startScan()
     }
 
     fun dismissDiagnostics() {
@@ -151,6 +160,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshPermission() {
         val granted = StoragePermission.isGranted(getApplication())
         _state.update { it.copy(hasPermission = granted) }
+        val st = _state.value
+        if (granted && st.settings.autoScan && !st.hasScanned && !st.scanning) startScan()
     }
 
     // ---- navigation -----------------------------------------------------------------------
@@ -161,10 +172,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun back() {
         detailsJob?.cancel()
+        hashJob?.cancel()
         _state.update {
             it.copy(
                 screen = Screen.MAIN, detailsId = null, detailsEntry = null, detailsDuplicates = emptyList(),
-                details = null, detailsLoading = false,
+                details = null, detailsLoading = false, fileHash = null, hashing = false,
             )
         }
     }
@@ -172,10 +184,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun openDetails(id: String) {
         val entry = entries.firstOrNull { it.detected.id == id } ?: return
         detailsJob?.cancel()
+        hashJob?.cancel()
         _state.update {
             it.copy(
                 screen = Screen.DETAILS, detailsId = id, detailsEntry = entry,
                 detailsDuplicates = Duplicates.groupOf(entries, id), details = null, detailsLoading = true,
+                fileHash = null, hashing = false,
             )
         }
         detailsJob = viewModelScope.launch {
@@ -327,34 +341,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // ---- deleting -------------------------------------------------------------------------
 
-    /** Deletes one file, then re-checks that every known file (duplicates especially) still exists. */
-    fun deleteFile(id: String) {
-        if (_state.value.busy) return
+    fun deleteFile(id: String) = deleteFiles(listOf(id))
+
+    /** Removes every file the cleanup plan marked as a redundant duplicate. */
+    fun cleanupDuplicates() = deleteFiles(_state.value.cleanup.delete.map { it.id })
+
+    /** Deletes files, then re-checks that every known file (duplicates especially) still exists. */
+    private fun deleteFiles(targets: List<String>) {
+        if (targets.isEmpty() || _state.value.busy) return
         viewModelScope.launch {
             _state.update { it.copy(busy = true) }
-            val neighbours = Duplicates.groupOf(entries, id).map { it.detected.id }.filter { it != id }
+            val detailsId = _state.value.detailsId
+            val neighbours = detailsId
+                ?.let { id -> Duplicates.groupOf(entries, id).map { it.detected.id }.filter { it != id } }
+                .orEmpty()
             val before = detected.size
             val remaining = withContext(Dispatchers.IO) {
-                runCatching { File(id).delete() }
+                targets.forEach { runCatching { File(it).delete() } }
                 Duplicates.prune(detected) { it.exists() }
             }
             detected = remaining
             val ids = remaining.map { it.id }.toSet()
             selection = selection.filter { it in ids }.toSet()
-            val gone = id !in ids
-            if (gone && _state.value.detailsId == id) {
+            val failed = targets.count { it in ids }
+            val removed = before - remaining.size
+            if (detailsId != null && detailsId !in ids) {
                 val next = neighbours.firstOrNull { it in ids }
                 if (next != null) openDetails(next) else back()
             }
             replan()
             _state.update { it.copy(busy = false) }
             _messages.trySend(
-                if (gone) {
-                    UiMessage(R.string.msg_deleted, listOf(maxOf(before - remaining.size, 1)))
-                } else {
-                    UiMessage(R.string.msg_delete_failed)
+                when {
+                    failed == 0 -> UiMessage(R.string.msg_deleted, listOf(maxOf(removed, 1)))
+                    removed > 0 -> UiMessage(R.string.msg_deleted_failed, listOf(removed, failed))
+                    else -> UiMessage(R.string.msg_delete_failed)
                 },
             )
+        }
+    }
+
+    // ---- file hash ------------------------------------------------------------------------
+
+    fun computeHash() {
+        val id = _state.value.detailsId ?: return
+        if (_state.value.hashing) return
+        hashJob?.cancel()
+        _state.update { it.copy(hashing = true, fileHash = null) }
+        hashJob = viewModelScope.launch {
+            val hash = withContext(Dispatchers.IO) { runCatching { FileHasher.sha256(File(id)) }.getOrNull() }
+            _state.update { if (it.detailsId == id) it.copy(hashing = false, fileHash = hash) else it.copy(hashing = false) }
         }
     }
 
@@ -407,6 +443,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             cur.copy(
                 items = visible.map { ItemUi(it, it.plan.status == PlanStatus.READY && it.detected.id in selected) },
                 totalFound = all.size,
+                totalBytes = all.sumOf { it.detected.size },
+                cleanup = DuplicateCleanup.plan(all),
                 detailsEntry = cur.detailsId?.let { id -> all.firstOrNull { it.detected.id == id } } ?: cur.detailsEntry,
                 detailsDuplicates = cur.detailsId?.let { Duplicates.groupOf(all, it) }.orEmpty(),
             )

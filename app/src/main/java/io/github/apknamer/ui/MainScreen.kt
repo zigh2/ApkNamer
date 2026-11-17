@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -60,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import io.github.apknamer.R
 import io.github.apknamer.data.parse.IconLoader
 import io.github.apknamer.domain.AppSettings
+import io.github.apknamer.domain.CleanupPlan
 import io.github.apknamer.domain.Filter
 import io.github.apknamer.domain.InstallState
 import io.github.apknamer.domain.PackageType
@@ -88,6 +93,7 @@ fun MainScreen(
     onRequestPermission: () -> Unit,
 ) {
     var showConfirm by rememberSaveable { mutableStateOf(false) }
+    var showCleanup by rememberSaveable { mutableStateOf(false) }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) vm.onFolderPicked(uri)
     }
@@ -138,9 +144,41 @@ fun MainScreen(
                     onQuery = vm::setQuery,
                     onFilter = vm::setFilter,
                     onSettings = { transform -> vm.updateSettings(transform) },
+                    onCleanup = { showCleanup = true },
                 )
             }
         }
+    }
+
+    if (showCleanup) {
+        val context = LocalContext.current
+        val plan = state.cleanup
+        AlertDialog(
+            onDismissRequest = { showCleanup = false },
+            title = { Text(stringResource(R.string.cleanup_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.cleanup_body, plan.delete.size, formatSize(context, plan.bytes)))
+                    val preview = plan.delete.take(15).joinToString("\n") { it.file.name }
+                    val more = plan.delete.size - 15
+                    Text(
+                        if (more > 0) preview + "\n" + stringResource(R.string.cleanup_more, more) else preview,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.heightIn(max = 200.dp).verticalScroll(rememberScrollState()),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCleanup = false
+                    vm.cleanupDuplicates()
+                }) { Text(stringResource(R.string.delete_confirm), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCleanup = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 
     if (showConfirm) {
@@ -192,7 +230,9 @@ private fun ResultsList(
     onQuery: (String) -> Unit,
     onFilter: (Filter) -> Unit,
     onSettings: ((AppSettings) -> AppSettings) -> Unit,
+    onCleanup: () -> Unit,
 ) {
+    val context = LocalContext.current
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
         item {
             LocationCard(state.root, state.scanning, onScan, onStop, onDownloads, onStorage, onChooseFolder)
@@ -217,6 +257,15 @@ private fun ResultsList(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
+            item {
+                Text(
+                    stringResource(R.string.stats_total, formatSize(context, state.totalBytes)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+            if (state.cleanup.delete.isNotEmpty()) item { CleanupCard(state.cleanup, onCleanup) }
             if (state.items.isEmpty()) item { InfoBlock(R.string.no_results_title, R.string.no_matches) }
         }
         items(state.items, key = { it.detected.id }) { item ->
@@ -551,6 +600,25 @@ private fun SelectionBar(
             Button(onClick = onRename, enabled = selected > 0 && !busy) {
                 Text(stringResource(R.string.rename_n, selected))
             }
+        }
+    }
+}
+
+@Composable
+private fun CleanupCard(plan: CleanupPlan, onCleanup: () -> Unit) {
+    val context = LocalContext.current
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Row(
+            Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                stringResource(R.string.cleanup_summary, plan.delete.size, formatSize(context, plan.bytes)),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Button(onClick = onCleanup) { Text(stringResource(R.string.cleanup_button)) }
         }
     }
 }

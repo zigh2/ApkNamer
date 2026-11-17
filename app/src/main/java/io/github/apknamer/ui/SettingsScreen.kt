@@ -146,6 +146,11 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
 
             Section(stringResource(R.string.section_scanning)) {
                 SwitchRow(
+                    stringResource(R.string.auto_scan),
+                    s.autoScan,
+                    { v -> vm.updateSettings { it.copy(autoScan = v) } },
+                )
+                SwitchRow(
                     stringResource(R.string.subfolders),
                     s.recursive,
                     { v -> vm.updateSettings { it.copy(recursive = v) } },

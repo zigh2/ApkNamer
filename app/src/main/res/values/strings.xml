@@ -47,7 +47,6 @@
     <string name="undo">Undo</string>
     <string name="undo_last">Undo last batch</string>
 
-    <string name="options">Options</string>
     <string name="template_label">Name template</string>
     <string name="template_help">Tokens: {name} {package} {version} {code} {type} {original}. Wrap text in &lt;…&gt; to drop it automatically when a value is missing.</string>
     <string name="template_unknown">Unknown tokens: %1$s</string>
@@ -171,4 +170,15 @@
     <string name="msg_deleted">Deleted %1$d files</string>
     <string name="msg_delete_failed">Couldn\'t delete the file</string>
     <string name="open_folder_failed">No file manager could open the folder. The path was copied instead.</string>
+
+    <string name="cleanup_title">Remove duplicates?</string>
+    <string name="cleanup_body">%1$d duplicate files will be deleted, freeing %2$s. In each group the file that is already named correctly (otherwise the newest) is kept. This cannot be undone.</string>
+    <string name="cleanup_more">… and %1$d more</string>
+    <string name="cleanup_button">Remove duplicates</string>
+    <string name="cleanup_summary">%1$d duplicate files can be removed (%2$s)</string>
+    <string name="stats_total">Total size: %1$s</string>
+    <string name="msg_deleted_failed">Deleted %1$d files, %2$d failed</string>
+    <string name="auto_scan">Scan automatically on launch</string>
+    <string name="label_file_hash">File SHA-256</string>
+    <string name="action_hash">Calculate SHA-256</string>
 </resources>

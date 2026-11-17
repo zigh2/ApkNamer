@@ -91,6 +91,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 data class AppSettings(
     val rename: RenameOptions = RenameOptions(),
     val deepScan: Boolean = false,
+    val autoScan: Boolean = false,
     val recursive: Boolean = true,
     val lastRoot: String? = null,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,

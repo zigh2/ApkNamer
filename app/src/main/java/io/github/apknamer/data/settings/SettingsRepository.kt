@@ -34,6 +34,7 @@ class SettingsRepository(context: Context) {
             fixExtension = prefs.getBoolean("fix_extension", true),
         ),
         deepScan = prefs.getBoolean("deep_scan", false),
+        autoScan = prefs.getBoolean("auto_scan", false),
         recursive = prefs.getBoolean("recursive", true),
         lastRoot = prefs.getString("last_root", null),
         themeMode = enumOf(prefs.getString("theme", null), ThemeMode.SYSTEM),
@@ -65,6 +66,7 @@ class SettingsRepository(context: Context) {
             .putBoolean("replace_spaces", s.rename.replaceSpaces)
             .putBoolean("fix_extension", s.rename.fixExtension)
             .putBoolean("deep_scan", s.deepScan)
+            .putBoolean("auto_scan", s.autoScan)
             .putBoolean("recursive", s.recursive)
             .putString("last_root", s.lastRoot)
             .putString("theme", s.themeMode.name)

@@ -47,7 +47,6 @@
     <string name="undo">تراجع</string>
     <string name="undo_last">تراجع عن آخر دفعة</string>
 
-    <string name="options">الخيارات</string>
     <string name="template_label">قالب الاسم</string>
     <string name="template_help">الرموز المتاحة: {name} {package} {version} {code} {type} {original}. ضع النص بين &lt;…&gt; ليُحذف تلقائياً إذا كانت القيمة غير متوفرة.</string>
     <string name="template_unknown">رموز غير معروفة: %1$s</string>
@@ -171,4 +170,15 @@
     <string name="msg_deleted">تم حذف %1$d ملف</string>
     <string name="msg_delete_failed">تعذّر حذف الملف</string>
     <string name="open_folder_failed">لا يوجد مدير ملفات يستطيع فتح المجلد. تم نسخ المسار بدلاً من ذلك.</string>
+
+    <string name="cleanup_title">إزالة المكررات؟</string>
+    <string name="cleanup_body">سيتم حذف %1$d ملف مكرر وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</string>
+    <string name="cleanup_more">… و%1$d أخرى</string>
+    <string name="cleanup_button">إزالة المكررات</string>
+    <string name="cleanup_summary">يمكن إزالة %1$d ملف مكرر (%2$s)</string>
+    <string name="stats_total">الحجم الإجمالي: %1$s</string>
+    <string name="msg_deleted_failed">تم حذف %1$d ملف وفشل %2$d</string>
+    <string name="auto_scan">البحث تلقائياً عند فتح التطبيق</string>
+    <string name="label_file_hash">بصمة الملف SHA-256</string>
+    <string name="action_hash">احسب بصمة SHA-256</string>
 </resources>

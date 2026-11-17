@@ -20,7 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,13 +41,11 @@ import java.io.File
 /** App icon loaded lazily; shows the first letter of the app name until (or unless) an icon is available. */
 @Composable
 fun AppIcon(item: DetectedFile, loader: IconLoader, size: Dp, modifier: Modifier = Modifier) {
-    val bitmap by produceState<Bitmap?>(
-        initialValue = loader.cached(item),
-        item.file.absolutePath,
-        item.size,
-        item.modified,
-    ) {
-        value = loader.cached(item) ?: loader.load(item)
+    var bitmap by remember(item.file.absolutePath, item.size, item.modified) {
+        mutableStateOf<Bitmap?>(loader.cached(item))
+    }
+    LaunchedEffect(item.file.absolutePath, item.size, item.modified) {
+        if (bitmap == null) bitmap = loader.load(item)
     }
     val shape = RoundedCornerShape(size * 0.24f)
     val current = bitmap

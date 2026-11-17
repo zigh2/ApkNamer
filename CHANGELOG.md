@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.7]
+
+### Added
+- One-tap duplicate cleanup: keeps one file per duplicate group (already correctly named, otherwise newest) and deletes the rest after a preview; everything is re-verified afterwards.
+- Total size of the found packages and the space duplicates occupy.
+- Optional "scan automatically on launch".
+- File SHA-256 on demand in the details page (streamed, constant memory).
+
+### Fixed
+- Lint `ProduceStateDoesNotAssignValue`: the icon composable no longer uses `produceState`.
+- Removed an unused string resource.
+
 ## [1.6]
 
 ### Fixed
