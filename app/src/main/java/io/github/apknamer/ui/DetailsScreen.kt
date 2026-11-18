@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.apknamer.R
+import io.github.apknamer.domain.Abis
 import io.github.apknamer.domain.DetectedFile
 import io.github.apknamer.domain.InstallState
 import io.github.apknamer.domain.PackageType
@@ -156,8 +157,14 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, snackbar: SnackbarHostState
                 InfoRow(stringResource(R.string.label_package), packageName)
                 InfoRow(stringResource(R.string.label_version_name), meta?.versionName)
                 InfoRow(stringResource(R.string.label_version_code), meta?.versionCode?.toString())
-                apk?.minSdk?.takeIf { it > 0 }?.let { InfoRow(stringResource(R.string.label_min_sdk), sdkText(it)) }
-                apk?.targetSdk?.takeIf { it > 0 }?.let { InfoRow(stringResource(R.string.label_target_sdk), sdkText(it)) }
+                (meta?.minSdk ?: apk?.minSdk)?.takeIf { it > 0 }?.let { InfoRow(stringResource(R.string.label_min_sdk), sdkText(it)) }
+                (meta?.targetSdk ?: apk?.targetSdk)?.takeIf { it > 0 }?.let {
+                    InfoRow(stringResource(R.string.label_target_sdk), sdkText(it))
+                }
+                Abis.abiLabel(meta?.abis.orEmpty())?.let { abi ->
+                    val short = Abis.archLabel(meta?.abis.orEmpty())
+                    InfoRow(stringResource(R.string.label_abi), if (short != null) "$abi ($short)" else abi)
+                }
                 if (apk != null) {
                     InfoRow(stringResource(R.string.label_signature), apk.signerSha256, mono = true)
                     Column {
@@ -232,8 +239,9 @@ fun DetailsScreen(state: UiState, vm: MainViewModel, snackbar: SnackbarHostState
                 )
                 InfoRow(stringResource(R.string.label_modified), formatDate(context, file.modified))
                 InfoRow(stringResource(R.string.label_format), file.type.extension.uppercase().ifEmpty { null })
-                if (state.fileHash != null) {
-                    InfoRow(stringResource(R.string.label_file_hash), state.fileHash, mono = true)
+                val knownHash = state.fileHash ?: file.hash
+                if (knownHash != null) {
+                    InfoRow(stringResource(R.string.label_file_hash), knownHash, mono = true)
                 } else if (state.hashing) {
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                 } else {

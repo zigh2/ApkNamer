@@ -10,7 +10,10 @@ package io.github.apknamer.domain
 object NameTemplate {
     const val DEFAULT = "{name}< v{version}>< ({code})>"
 
-    val TOKENS = listOf("name", "package", "version", "code", "type", "original")
+    val TOKENS = listOf(
+        "name", "package", "version", "code", "type", "original",
+        "minsdk", "minandroid", "targetsdk", "targetandroid", "abi", "arch",
+    )
 
     private val tokenRegex = Regex("""\{(\w+)\}""")
     private val groupRegex = Regex("""<([^<>]*)>""")

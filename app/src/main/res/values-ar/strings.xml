@@ -41,7 +41,7 @@
     <string name="undo_last">تراجع عن آخر دفعة</string>
 
     <string name="template_label">قالب الاسم</string>
-    <string name="template_help">الرموز المتاحة: {name} {package} {version} {code} {type} {original}. ضع النص بين &lt;…&gt; ليُحذف تلقائياً إذا كانت القيمة غير متوفرة.</string>
+    <string name="template_help">الرموز المتاحة: {name} {package} {version} {code} {type} {original} {minsdk} {minandroid} {targetsdk} {targetandroid} {abi} {arch}. ضع النص بين &lt;…&gt; ليُحذف تلقائياً إذا كانت القيمة غير متوفرة.</string>
     <string name="template_unknown">رموز غير معروفة: %1$s</string>
     <string name="preview">المعاينة: %1$s</string>
     <string name="opt_replace_spaces">استبدال المسافات بشرطة سفلية</string>
@@ -156,14 +156,11 @@
     <string name="delete_body">%1$s\n\n%2$s\n\nسيُحذف الملف نهائياً من جهازك ولا يمكن التراجع عن ذلك.</string>
     <string name="delete_confirm">حذف</string>
     <string name="duplicates_title">الملفات المكررة (%1$d)</string>
-    <string name="duplicates_hint">نفس التطبيق ونفس الإصدار. بعد كل عملية حذف يُعاد التحقق من وجود جميعها.</string>
+    <string name="duplicates_hint">نسخ متطابقة: نفس اسم التطبيق ونفس الحجم ونفس البصمة. بعد كل عملية حذف يُعاد التحقق من وجود جميعها.</string>
     <string name="tag_this_file">هذا الملف</string>
     <string name="msg_delete_failed">تعذّر حذف الملف</string>
     <string name="open_folder_failed">لا يوجد مدير ملفات يستطيع فتح المجلد. تم نسخ المسار بدلاً من ذلك.</string>
-
-    <string name="cleanup_title">إزالة المكررات؟</string>
-    <string name="cleanup_more">… و%1$d أخرى</string>
-    <string name="cleanup_button">إزالة المكررات</string>
+    <string name="cleanup_button">مراجعة المكررات</string>
     <string name="stats_total">الحجم الإجمالي: %1$s</string>
     <string name="auto_scan">البحث تلقائياً عند فتح التطبيق</string>
     <string name="label_file_hash">بصمة الملف SHA-256</string>
@@ -249,14 +246,6 @@
         <item quantity="many">%1$d صلاحية</item>
         <item quantity="other">%1$d صلاحية</item>
     </plurals>
-    <plurals name="cleanup_body" tools:ignore="ImpliedQuantity,StringFormatCount">
-        <item quantity="zero">لا توجد ملفات مكررة للحذف.</item>
-        <item quantity="one">سيتم حذف ملف مكرر واحد وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
-        <item quantity="two">سيتم حذف ملفين مكررين وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
-        <item quantity="few">سيتم حذف %1$d ملفات مكررة وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
-        <item quantity="many">سيتم حذف %1$d ملفاً مكرراً وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
-        <item quantity="other">سيتم حذف %1$d ملف مكرر وتوفير %2$s. في كل مجموعة يُبقى الملف المسمّى بشكل صحيح بالفعل (وإلا الأحدث). لا يمكن التراجع عن ذلك.</item>
-    </plurals>
     <plurals name="cleanup_summary" tools:ignore="ImpliedQuantity,StringFormatCount">
         <item quantity="zero">لا توجد ملفات مكررة</item>
         <item quantity="one">يمكن إزالة ملف مكرر واحد (%2$s)</item>
@@ -264,5 +253,47 @@
         <item quantity="few">يمكن إزالة %1$d ملفات مكررة (%2$s)</item>
         <item quantity="many">يمكن إزالة %1$d ملفاً مكرراً (%2$s)</item>
         <item quantity="other">يمكن إزالة %1$d ملف مكرر (%2$s)</item>
+    </plurals>
+
+    <string name="dup_title">المكررات</string>
+    <string name="dup_rule">ملفات متطابقة: نفس اسم التطبيق ونفس الحجم ونفس البصمة. حدّد النسخ التي تريد حذفها. تبقى دائماً نسخة واحدة على الأقل من كل تطبيق.</string>
+    <string name="dup_auto">تحديد تلقائي</string>
+    <string name="dup_clear">إلغاء التحديد</string>
+    <string name="dup_none">لا توجد ملفات مكررة.</string>
+    <string name="dup_frees">يوفّر %1$s</string>
+    <string name="dup_delete_button">حذف المحدد</string>
+    <string name="dup_confirm_body">ستُحذف هذه الملفات نهائياً وتوفّر %1$s. تبقى نسخة واحدة من كل تطبيق. الملفات التي ستُحذف:</string>
+    <string name="dup_keeping">سيبقى %1$d من %2$d</string>
+    <string name="tag_kept">سيبقى</string>
+    <string name="msg_keep_one">يجب إبقاء نسخة واحدة على الأقل من كل تطبيق.</string>
+    <string name="msg_keep_missing">نسخة كان يجب أن تبقى لم تعد موجودة. أعد البحث ثم حاول مجدداً.</string>
+    <string name="hash_progress">جارٍ مقارنة الملفات… %1$d من %2$d</string>
+    <string name="label_abi">معمارية المعالج</string>
+    <string name="sdk_min_short">أندرويد %1$s+</string>
+    <string name="field_sdk_abi">إصدار أندرويد والمعالج</string>
+
+    <plurals name="dup_selected" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لم يُحدَّد أي ملف</item>
+        <item quantity="one">تم تحديد ملف واحد</item>
+        <item quantity="two">تم تحديد ملفين</item>
+        <item quantity="few">تم تحديد %1$d ملفات</item>
+        <item quantity="many">تم تحديد %1$d ملفاً</item>
+        <item quantity="other">تم تحديد %1$d ملف</item>
+    </plurals>
+    <plurals name="dup_group_info" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">%2$s</item>
+        <item quantity="one">نسخة واحدة · %2$s</item>
+        <item quantity="two">نسختان متطابقتان · %2$s لكل نسخة</item>
+        <item quantity="few">%1$d نسخ متطابقة · %2$s لكل نسخة</item>
+        <item quantity="many">%1$d نسخة متطابقة · %2$s لكل نسخة</item>
+        <item quantity="other">%1$d نسخة متطابقة · %2$s لكل نسخة</item>
+    </plurals>
+    <plurals name="dup_confirm_title" tools:ignore="ImpliedQuantity,StringFormatCount">
+        <item quantity="zero">لا شيء للحذف</item>
+        <item quantity="one">حذف ملف واحد؟</item>
+        <item quantity="two">حذف ملفين؟</item>
+        <item quantity="few">حذف %1$d ملفات؟</item>
+        <item quantity="many">حذف %1$d ملفاً؟</item>
+        <item quantity="other">حذف %1$d ملف؟</item>
     </plurals>
 </resources>

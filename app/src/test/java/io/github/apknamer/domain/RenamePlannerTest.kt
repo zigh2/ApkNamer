@@ -58,6 +58,19 @@ class RenamePlannerTest {
         assertEquals("zip", plan.target?.extension)
     }
 
+    @Test fun androidAndCpuTokens() {
+        val m = meta.copy(minSdk = 26, targetSdk = 34, abis = setOf("arm64-v8a"))
+        val opts = options.copy(template = "{name} {arch} Android {minandroid}+ (API {minsdk}, target {targetsdk})")
+        val plan = RenamePlanner.plan(listOf(item("/dl/a.apk", m = m)), opts, none).single()
+        assertEquals("Telegram v8 Android 8.0+ (API 26, target 34).apk", plan.target?.name)
+    }
+
+    @Test fun optionalGroupsDropMissingAndroidAndCpuInfo() {
+        val opts = options.copy(template = "{name}< {arch}>< Android {minandroid}+>")
+        val plan = RenamePlanner.plan(listOf(item("/dl/a.apk")), opts, none).single()
+        assertEquals("Telegram.apk", plan.target?.name)
+    }
+
     @Test fun fallsBackToPackageNameWhenLabelMissing() {
         val m = meta.copy(label = null)
         val plan = RenamePlanner.plan(listOf(item("/dl/a.apk", m = m)), options, none).single()

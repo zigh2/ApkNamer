@@ -24,7 +24,8 @@ once apps became split bundles.
 - **Rich list** – app icons, size, date, folder path; search, filter (type / updates / duplicates) and sort.
 - **Details page** – package, versions, min/target Android, permissions, signature SHA-256, bundle contents, install state vs. your device.
 - **Duplicates & cleanup** – see every duplicate of an app (same package and version) with paths and sizes, delete from the details page, open the folder in your file manager.
-- **Cleanup** – remove all redundant duplicates in one tap (with a preview), see total size and reclaimable space.
+- **Safe duplicate cleanup** – duplicates are byte-identical files (same app name, size and SHA-256). A review page lets you pick the copies to delete; at least one copy of each app is always kept, and every path is listed before deleting.
+- **Android & CPU info** – minimum/target Android and CPU architecture (v8/v7/x86…) in the list, details page and file-name templates.
 - **Customisable** – light/dark/system theme, dynamic colors, pure black, in-app language (English / Arabic with full RTL).
 
 ## Supported formats and where metadata comes from

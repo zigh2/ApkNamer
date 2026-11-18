@@ -28,6 +28,12 @@ object RenamePlanner {
                     "code" to meta.versionCode?.toString(),
                     "type" to item.type.extension.uppercase(),
                     "original" to original,
+                    "minsdk" to meta.minSdk?.toString(),
+                    "minandroid" to meta.minSdk?.let { AndroidVersions.name(it) },
+                    "targetsdk" to meta.targetSdk?.toString(),
+                    "targetandroid" to meta.targetSdk?.let { AndroidVersions.name(it) },
+                    "abi" to Abis.abiLabel(meta.abis),
+                    "arch" to Abis.archLabel(meta.abis),
                 ),
             )
             val base = FileNameSanitizer

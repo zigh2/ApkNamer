@@ -8,7 +8,7 @@ object FileHasher {
     fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
-            val buffer = ByteArray(64 * 1024)
+            val buffer = ByteArray(256 * 1024)
             while (true) {
                 val read = input.read(buffer)
                 if (read < 0) break

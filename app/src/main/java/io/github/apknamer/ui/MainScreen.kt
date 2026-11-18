@@ -73,6 +73,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.apknamer.R
 import io.github.apknamer.data.parse.IconLoader
+import io.github.apknamer.domain.Abis
 import io.github.apknamer.domain.AppSettings
 import io.github.apknamer.domain.CleanupPlan
 import io.github.apknamer.domain.Filter
@@ -96,7 +97,6 @@ fun MainScreen(
     onRequestPermission: () -> Unit,
 ) {
     var showConfirm by rememberSaveable { mutableStateOf(false) }
-    var showCleanup by rememberSaveable { mutableStateOf(false) }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) vm.onFolderPicked(uri)
     }
@@ -147,41 +147,10 @@ fun MainScreen(
                     onQuery = vm::setQuery,
                     onFilter = vm::setFilter,
                     onSettings = { transform -> vm.updateSettings(transform) },
-                    onCleanup = { showCleanup = true },
+                    onCleanup = vm::openDuplicates,
                 )
             }
         }
-    }
-
-    if (showCleanup) {
-        val context = LocalContext.current
-        val plan = state.cleanup
-        AlertDialog(
-            onDismissRequest = { showCleanup = false },
-            title = { Text(stringResource(R.string.cleanup_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(pluralStringResource(R.plurals.cleanup_body, plan.delete.size, plan.delete.size, formatSize(context, plan.bytes)))
-                    val preview = plan.delete.take(15).joinToString("\n") { it.file.name }
-                    val more = plan.delete.size - 15
-                    Text(
-                        if (more > 0) preview + "\n" + stringResource(R.string.cleanup_more, more) else preview,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.heightIn(max = 200.dp).verticalScroll(rememberScrollState()),
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showCleanup = false
-                    vm.cleanupDuplicates()
-                }) { Text(stringResource(R.string.delete_confirm), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCleanup = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
     }
 
     if (showConfirm) {
@@ -426,7 +395,10 @@ private fun filterLabel(filter: Filter): String = when (filter) {
 private fun ProgressBlock(state: UiState) {
     val p = state.progress
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (p.total > 0) {
+        if (p.hashTotal > 0) {
+            LinearProgressIndicator(progress = { p.hashed / p.hashTotal.toFloat() }, modifier = Modifier.fillMaxWidth())
+            Text(stringResource(R.string.hash_progress, p.hashed, p.hashTotal), style = MaterialTheme.typography.bodySmall)
+        } else if (p.total > 0) {
             LinearProgressIndicator(progress = { p.analyzed / p.total.toFloat() }, modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.analyze_progress, p.analyzed, p.total), style = MaterialTheme.typography.bodySmall)
         } else {
@@ -471,8 +443,18 @@ private fun ItemRow(
         lo.versionCode -> code?.toString()
         else -> null
     }
+    val minAndroid = if (lo.sdkAbi) {
+        meta?.minSdk?.let { api ->
+            androidVersionName(api)?.let { stringResource(R.string.sdk_min_short, it) } ?: "API $api+"
+        }
+    } else {
+        null
+    }
+    val arch = if (lo.sdkAbi) Abis.archLabel(meta?.abis.orEmpty()) else null
     val details = listOfNotNull(
         versionText,
+        minAndroid,
+        arch,
         if (lo.size) formatSize(context, item.detected.size) else null,
         if (lo.date) formatDate(context, item.detected.modified) else null,
     ).joinToString(" \u00B7 ")

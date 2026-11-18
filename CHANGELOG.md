@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.9]
+
+### Fixed (important)
+- Duplicate detection no longer relies on package + version code, which wrongly merged different builds of the same version (for example per-CPU builds). Files are now duplicates only when they match, in this order, on **app name, file size and a SHA-256 checksum**. The checksum is computed only for files that already share name and size, and cached.
+
+### Added
+- Duplicates review page: every group with all copies, full paths, sizes and dates. Select the copies to delete; selecting every copy of an app is refused (the last unselected copy is locked). Confirmation lists the full path of every file that will be deleted; everything is re-verified after deleting. "Auto-select" keeps one copy per group.
+- New naming tokens: `{minsdk}`, `{minandroid}`, `{targetsdk}`, `{targetandroid}`, `{abi}` (e.g. arm64-v8a) and `{arch}` (v8, v7, v5, x86, x64, arm, universal). A ready-made preset and optional list-row info ("Android 8.0+ · v8").
+- CPU architecture row in the details page; the known SHA-256 is shown without recomputing.
+
+### Removed
+- The one-tap "remove duplicates" dialog (replaced by the review page).
+
 ## [1.8]
 
 ### Changed

@@ -15,6 +15,22 @@ class BundleManifestTest {
         assertEquals(42L, m.versionCode)
     }
 
+    @Test fun xapkSdkAndSplitConfigs() {
+        val json = """{"package_name":"a.b","min_sdk_version":"21","target_sdk_version":"34",
+            "split_configs":["config.arm64_v8a","config.xxhdpi"]}"""
+        val m = BundleManifest.parseXapk(json)!!
+        assertEquals(21, m.minSdk)
+        assertEquals(34, m.targetSdk)
+        assertEquals(setOf("arm64-v8a"), m.abis)
+    }
+
+    @Test fun apkmMinApiAndArches() {
+        val json = """{"pkg_name":"a.b","min_api":"24","arches":["arm64-v8a","armeabi-v7a"]}"""
+        val m = BundleManifest.parseApkm(json)!!
+        assertEquals(24, m.minSdk)
+        assertEquals(setOf("arm64-v8a", "armeabi-v7a"), m.abis)
+    }
+
     @Test fun xapkWithNumericVersionCode() {
         val m = BundleManifest.parseXapk("""{"package_name":"a.b","version_code":7}""")!!
         assertEquals(7L, m.versionCode)

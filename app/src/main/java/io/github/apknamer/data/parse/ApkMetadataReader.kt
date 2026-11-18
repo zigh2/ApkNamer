@@ -37,6 +37,8 @@ class ApkMetadataReader(context: Context) {
             packageName = packageName,
             versionName = info.versionName?.trim()?.takeIf { it.isNotEmpty() },
             versionCode = runCatching { PackageInfoCompat.getLongVersionCode(info) }.getOrNull(),
+            minSdk = info.applicationInfo?.minSdkVersion?.takeIf { it > 0 },
+            targetSdk = info.applicationInfo?.targetSdkVersion?.takeIf { it > 0 },
         )
     }
 

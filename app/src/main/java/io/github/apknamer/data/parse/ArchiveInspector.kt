@@ -2,6 +2,7 @@ package io.github.apknamer.data.parse
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import io.github.apknamer.domain.Abis
 import io.github.apknamer.domain.AppMetadata
 import io.github.apknamer.domain.DetectedFile
 import io.github.apknamer.domain.PackageType
@@ -122,14 +123,18 @@ class ArchiveInspector(
         val extType = PackageType.fromExtension(file.extension)
 
         if (zip.getEntry("AndroidManifest.xml") != null) {
-            return result(file, PackageType.APK, reader.read(file))
+            return result(
+                file,
+                PackageType.APK,
+                reader.read(file)?.let { it.copy(abis = Abis.fromLibDirs(zip.entries().asSequence().map { e -> e.name })) },
+            )
         }
 
         readText(zip, "manifest.json")?.let(BundleManifest::parseXapk)?.let { meta ->
-            return result(file, PackageType.XAPK, enrich(zip, meta))
+            return result(file, PackageType.XAPK, withSplitAbis(zip, enrich(zip, meta)))
         }
         readText(zip, "info.json")?.let(BundleManifest::parseApkm)?.let { meta ->
-            return result(file, PackageType.APKM, enrich(zip, meta))
+            return result(file, PackageType.APKM, withSplitAbis(zip, enrich(zip, meta)))
         }
 
         val apks = apkEntries(zip)
@@ -138,7 +143,11 @@ class ArchiveInspector(
             if (looksLikeBundle) {
                 val type = extType.takeIf { it != PackageType.APK && it != PackageType.UNKNOWN }
                     ?: PackageType.APKS
-                return result(file, type, extractAndRead(zip, pickBase(apks, null)))
+                return result(
+                    file,
+                    type,
+                    extractAndRead(zip, pickBase(apks, null))?.let { it.copy(abis = it.abis + Abis.fromNames(apks.map { e -> e.name })) },
+                )
             }
         }
 
@@ -150,10 +159,13 @@ class ArchiveInspector(
 
     /** Fills gaps in the JSON descriptor from the bundle's base APK (only extracted when needed). */
     private fun enrich(zip: ZipFile, meta: AppMetadata): AppMetadata {
-        if (meta.label != null && meta.versionName != null && meta.versionCode != null) return meta
+        if (meta.label != null && meta.versionName != null && meta.versionCode != null && meta.minSdk != null) return meta
         val base = extractAndRead(zip, pickBase(apkEntries(zip), meta.packageName))
         return meta.fillMissingFrom(base)
     }
+
+    private fun withSplitAbis(zip: ZipFile, meta: AppMetadata): AppMetadata =
+        meta.copy(abis = meta.abis + Abis.fromNames(apkEntries(zip).map { it.name }))
 
     private fun apkEntries(zip: ZipFile): List<ZipEntry> =
         zip.entries().asSequence()

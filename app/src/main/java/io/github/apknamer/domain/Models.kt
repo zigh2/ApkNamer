@@ -25,6 +25,10 @@ data class AppMetadata(
     val packageName: String?,
     val versionName: String?,
     val versionCode: Long?,
+    val minSdk: Int? = null,
+    val targetSdk: Int? = null,
+    /** Native CPU architectures (e.g. "arm64-v8a"); empty when the app has no native code or it is unknown. */
+    val abis: Set<String> = emptySet(),
 ) {
     /** At least a name or a package id is needed to build a meaningful file name. */
     val isUsable: Boolean get() = !label.isNullOrBlank() || !packageName.isNullOrBlank()
@@ -35,6 +39,9 @@ data class AppMetadata(
             packageName = packageName ?: other.packageName,
             versionName = versionName ?: other.versionName,
             versionCode = versionCode ?: other.versionCode,
+            minSdk = minSdk ?: other.minSdk,
+            targetSdk = targetSdk ?: other.targetSdk,
+            abis = abis.ifEmpty { other.abis },
         )
 }
 
@@ -48,6 +55,8 @@ data class DetectedFile(
     val problem: Problem? = null,
     val size: Long = file.length(),
     val modified: Long = file.lastModified(),
+    /** SHA-256 of the whole file; only computed for files that share app name and size with another file. */
+    val hash: String? = null,
 ) {
     val id: String get() = file.absolutePath
 }
@@ -76,10 +85,12 @@ data class ListOptions(
     val installTag: Boolean = true,
     val duplicateTag: Boolean = true,
     val status: Boolean = true,
+    val sdkAbi: Boolean = true,
 ) {
     companion object {
         val COMPACT = ListOptions(
             oldName = false, versionCode = false, size = false, date = false, path = false, status = false,
+            sdkAbi = false,
         )
         val STANDARD = ListOptions()
         val DETAILED = ListOptions(packageName = true)
@@ -105,4 +116,10 @@ data class AppSettings(
     val confirmRename: Boolean = true,
 )
 
-data class ScanProgress(val visited: Int = 0, val analyzed: Int = 0, val total: Int = 0)
+data class ScanProgress(
+    val visited: Int = 0,
+    val analyzed: Int = 0,
+    val total: Int = 0,
+    val hashed: Int = 0,
+    val hashTotal: Int = 0,
+)

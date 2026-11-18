@@ -112,20 +112,7 @@ fun formatDate(context: Context, millis: Long): String =
         DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_ABBREV_MONTH,
     )
 
-fun androidVersionName(api: Int): String? = when (api) {
-    26 -> "8.0"
-    27 -> "8.1"
-    28 -> "9"
-    29 -> "10"
-    30 -> "11"
-    31 -> "12"
-    32 -> "12L"
-    33 -> "13"
-    34 -> "14"
-    35 -> "15"
-    36 -> "16"
-    else -> null
-}
+fun androidVersionName(api: Int): String? = io.github.apknamer.domain.AndroidVersions.name(api)
 
 fun copyToClipboard(context: Context, text: String) {
     val manager = context.getSystemService(ClipboardManager::class.java)

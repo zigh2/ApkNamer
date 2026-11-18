@@ -19,6 +19,7 @@ import io.github.apknamer.data.parse.InstalledApps
 import io.github.apknamer.data.rename.RenameHistory
 import io.github.apknamer.data.rename.RenameReport
 import io.github.apknamer.data.rename.Renamer
+import io.github.apknamer.data.scan.DuplicateHasher
 import io.github.apknamer.data.scan.FileScanner
 import io.github.apknamer.data.settings.SettingsRepository
 import io.github.apknamer.data.storage.StoragePermission
@@ -29,6 +30,8 @@ import io.github.apknamer.domain.AppSettings
 import io.github.apknamer.domain.CleanupPlan
 import io.github.apknamer.domain.DetectedFile
 import io.github.apknamer.domain.DuplicateCleanup
+import io.github.apknamer.domain.DuplicateGroup
+import io.github.apknamer.domain.DuplicateGuard
 import io.github.apknamer.domain.Duplicates
 import io.github.apknamer.domain.Entry
 import io.github.apknamer.domain.EntryQuery
@@ -53,7 +56,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class Screen { MAIN, SETTINGS, DETAILS }
+enum class Screen { MAIN, SETTINGS, DETAILS, DUPLICATES }
 
 data class ItemUi(val entry: Entry, val selected: Boolean) {
     val detected: DetectedFile get() = entry.detected
@@ -72,6 +75,8 @@ data class UiState(
     val totalFound: Int = 0,
     val totalBytes: Long = 0,
     val cleanup: CleanupPlan = DuplicateCleanup.EMPTY,
+    val dupGroups: List<DuplicateGroup> = emptyList(),
+    val dupSelected: Set<String> = emptySet(),
     val query: String = "",
     val filter: Filter = Filter.ALL,
     val busy: Boolean = false,
@@ -106,6 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val reader = ApkMetadataReader(application)
     private val inspector = ArchiveInspector(reader, File(application.cacheDir, "inspect"))
     private val scanner = FileScanner(inspector)
+    private val duplicateHasher = DuplicateHasher()
     private val installedApps = InstalledApps(application)
     private val detailsLoader = DetailsLoader(reader, inspector, installedApps)
     val iconLoader = IconLoader(inspector, reader)
@@ -179,7 +185,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         hashJob?.cancel()
         _state.update {
             it.copy(
-                screen = Screen.MAIN, detailsId = null, detailsEntry = null, detailsDuplicates = emptyList(),
+                screen = Screen.MAIN, dupSelected = emptySet(), detailsId = null, detailsEntry = null, detailsDuplicates = emptyList(),
                 details = null, detailsLoading = false, fileHash = null, hashing = false,
             )
         }
@@ -232,8 +238,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _state.update { it.copy(progress = progress) }
                     }
                 }
-                detected = result
-                selection = result.map { it.id }.toSet()
+                // Duplicate step 3: checksum, only for files that already share app name and size.
+                val verified = duplicateHasher.fill(result) { done, total ->
+                    val now = SystemClock.elapsedRealtime()
+                    if (done == total || now - lastProgressAt.get() >= 100) {
+                        lastProgressAt.set(now)
+                        _state.update { it.copy(progress = it.progress.copy(hashed = done, hashTotal = total)) }
+                    }
+                }
+                detected = verified
+                selection = verified.map { it.id }.toSet()
                 _state.update { it.copy(hasScanned = true) }
                 replan()
             } catch (e: CancellationException) {
@@ -350,8 +364,58 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteFile(id: String) = deleteFiles(listOf(id))
 
-    /** Removes every file the cleanup plan marked as a redundant duplicate. */
-    fun cleanupDuplicates() = deleteFiles(_state.value.cleanup.delete.map { it.id })
+    // ---- duplicates review ----------------------------------------------------------------
+
+    fun openDuplicates() {
+        _state.update { it.copy(screen = Screen.DUPLICATES, dupSelected = emptySet()) }
+    }
+
+    /** Selecting every copy of an app is refused: at least one must remain. */
+    fun toggleDuplicate(id: String) {
+        val st = _state.value
+        if (id in st.dupSelected) {
+            _state.update { it.copy(dupSelected = it.dupSelected - id) }
+        } else if (DuplicateGuard.wouldRemoveLastCopy(st.dupGroups, st.dupSelected, id)) {
+            _messages.trySend(UiMessage(R.string.msg_keep_one))
+        } else {
+            _state.update { it.copy(dupSelected = it.dupSelected + id) }
+        }
+    }
+
+    /** Suggests keeping one file per group (the correctly named one, otherwise the newest). */
+    fun autoSelectDuplicates() {
+        val ids = DuplicateCleanup.plan(entries).delete.map { it.id }.toSet()
+        _state.update { it.copy(dupSelected = ids) }
+    }
+
+    fun clearDuplicateSelection() {
+        _state.update { it.copy(dupSelected = emptySet()) }
+    }
+
+    fun deleteSelectedDuplicates() {
+        val st = _state.value
+        val selected = st.dupSelected
+        if (st.busy || selected.isEmpty()) return
+        if (DuplicateGuard.violations(st.dupGroups, selected).isNotEmpty()) {
+            _messages.trySend(UiMessage(R.string.msg_keep_one))
+            return
+        }
+        viewModelScope.launch {
+            // Before deleting anything, confirm that a copy which must stay is still on disk.
+            val safe = withContext(Dispatchers.IO) {
+                st.dupGroups
+                    .filter { g -> g.entries.any { it.detected.id in selected } }
+                    .all { g -> g.entries.any { it.detected.id !in selected && it.detected.file.exists() } }
+            }
+            if (!safe) {
+                _messages.trySend(UiMessage(R.string.msg_keep_missing))
+                detected = withContext(Dispatchers.IO) { Duplicates.prune(detected) { it.exists() } }
+                replan()
+                return@launch
+            }
+            deleteFiles(selected.toList())
+        }
+    }
 
     /** Deletes files, then re-checks that every known file (duplicates especially) still exists. */
     private fun deleteFiles(targets: List<String>) {
@@ -450,12 +514,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
         val selected = selection
         val all = entries
+        val groups = Duplicates.groups(all)
+        val groupIds = groups.flatMap { g -> g.entries.map { it.detected.id } }.toSet()
         _state.update { cur ->
             cur.copy(
                 items = visible.map { ItemUi(it, it.plan.status == PlanStatus.READY && it.detected.id in selected) },
                 totalFound = all.size,
                 totalBytes = all.sumOf { it.detected.size },
                 cleanup = DuplicateCleanup.plan(all),
+                dupGroups = groups,
+                dupSelected = cur.dupSelected.filter { it in groupIds }.toSet(),
                 detailsEntry = cur.detailsId?.let { id -> all.firstOrNull { it.detected.id == id } } ?: cur.detailsEntry,
                 detailsDuplicates = cur.detailsId?.let { Duplicates.groupOf(all, it) }.orEmpty(),
             )

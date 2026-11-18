@@ -16,7 +16,7 @@ class DuplicateCleanupTest {
         duplicate: Boolean = true,
     ): Entry {
         val file = File(path)
-        val detected = DetectedFile(file, PackageType.APK, AppMetadata("App", pkg, "1.0", code), null, size, modified)
+        val detected = DetectedFile(file, PackageType.APK, AppMetadata("App", pkg, "1.0", code), null, size, modified, "hash-$pkg")
         val status = if (unchanged) PlanStatus.UNCHANGED else PlanStatus.READY
         return Entry(detected, RenamePlan(file, null, status), InstallState.NOT_INSTALLED, duplicate)
     }
@@ -26,7 +26,7 @@ class DuplicateCleanupTest {
             listOf(
                 entry("/dl/a.apk", "com.a", 1, modified = 10, size = 100),
                 entry("/dl/b.apk", "com.a", 1, modified = 30, size = 100),
-                entry("/dl/c.apk", "com.a", 1, modified = 20, size = 50),
+                entry("/dl/c.apk", "com.a", 1, modified = 20, size = 100),
             ),
         )
         assertEquals(listOf(File("/dl/b.apk").absolutePath), plan.keep.map { it.id })
@@ -34,7 +34,7 @@ class DuplicateCleanupTest {
             setOf(File("/dl/a.apk").absolutePath, File("/dl/c.apk").absolutePath),
             plan.delete.map { it.id }.toSet(),
         )
-        assertEquals(150L, plan.bytes)
+        assertEquals(200L, plan.bytes)
     }
 
     @Test fun prefersAlreadyCorrectlyNamedFile() {

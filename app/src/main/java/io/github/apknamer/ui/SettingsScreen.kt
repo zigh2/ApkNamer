@@ -56,6 +56,7 @@ private val PRESETS = listOf(
     "Name_1.0" to "{name}_{version}",
     "Name [package] 1.0" to "{name}< [{package}]>< {version}>",
     "package-1.0-123" to "{package}-{version}-{code}",
+    "Name 1.0 v8 (Android 8.0+)" to "{name}< {version}>< {arch}>< (Android {minandroid}+)>",
 )
 
 private val SAMPLE = mapOf(
@@ -65,6 +66,12 @@ private val SAMPLE = mapOf(
     "code" to "5034",
     "type" to "APK",
     "original" to "download (1)",
+    "minsdk" to "26",
+    "minandroid" to "8.0",
+    "targetsdk" to "34",
+    "targetandroid" to "14",
+    "abi" to "arm64-v8a",
+    "arch" to "v8",
 )
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
@@ -237,6 +244,7 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
                 SwitchRow(stringResource(R.string.field_version_name), l.versionName, { v -> setList { it.copy(versionName = v) } })
                 SwitchRow(stringResource(R.string.field_version_code), l.versionCode, { v -> setList { it.copy(versionCode = v) } })
                 SwitchRow(stringResource(R.string.field_package), l.packageName, { v -> setList { it.copy(packageName = v) } })
+                SwitchRow(stringResource(R.string.field_sdk_abi), l.sdkAbi, { v -> setList { it.copy(sdkAbi = v) } })
                 SwitchRow(stringResource(R.string.field_size), l.size, { v -> setList { it.copy(size = v) } })
                 SwitchRow(stringResource(R.string.field_date), l.date, { v -> setList { it.copy(date = v) } })
                 SwitchRow(stringResource(R.string.show_paths), l.path, { v -> setList { it.copy(path = v) } })

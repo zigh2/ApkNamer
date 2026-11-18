@@ -54,6 +54,7 @@ class SettingsRepository(context: Context) {
             installTag = prefs.getBoolean("list_install_tag", true),
             duplicateTag = prefs.getBoolean("list_duplicate_tag", true),
             status = prefs.getBoolean("list_status", true),
+            sdkAbi = prefs.getBoolean("list_sdk_abi", true),
         ),
         sortOrder = enumOf(prefs.getString("sort", null), SortOrder.NAME),
         sortDescending = prefs.getBoolean("sort_desc", false),
@@ -85,6 +86,7 @@ class SettingsRepository(context: Context) {
             .putBoolean("list_install_tag", s.list.installTag)
             .putBoolean("list_duplicate_tag", s.list.duplicateTag)
             .putBoolean("list_status", s.list.status)
+            .putBoolean("list_sdk_abi", s.list.sdkAbi)
             .putString("sort", s.sortOrder.name)
             .putBoolean("sort_desc", s.sortDescending)
             .putBoolean("confirm_rename", s.confirmRename)

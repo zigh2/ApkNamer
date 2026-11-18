@@ -1,0 +1,31 @@
+package io.github.apknamer.domain
+
+object AndroidVersions {
+    /** Marketing version for an API level, e.g. 26 -> "8.0"; null when unknown. */
+    fun name(api: Int): String? = when (api) {
+        14 -> "4.0"
+        15 -> "4.0.3"
+        16 -> "4.1"
+        17 -> "4.2"
+        18 -> "4.3"
+        19 -> "4.4"
+        20 -> "4.4W"
+        21 -> "5.0"
+        22 -> "5.1"
+        23 -> "6.0"
+        24 -> "7.0"
+        25 -> "7.1"
+        26 -> "8.0"
+        27 -> "8.1"
+        28 -> "9"
+        29 -> "10"
+        30 -> "11"
+        31 -> "12"
+        32 -> "12L"
+        33 -> "13"
+        34 -> "14"
+        35 -> "15"
+        36 -> "16"
+        else -> null
+    }
+}

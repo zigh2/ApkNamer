@@ -62,6 +62,7 @@ fun AppRoot(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
             Screen.MAIN -> MainScreen(state, viewModel, snackbarHostState, onRequestPermission)
             Screen.SETTINGS -> SettingsScreen(state, viewModel, viewModel::back)
             Screen.DETAILS -> DetailsScreen(state, viewModel, snackbarHostState, viewModel::back)
+            Screen.DUPLICATES -> DuplicatesScreen(state, viewModel, snackbarHostState, viewModel::back)
         }
     }
 
