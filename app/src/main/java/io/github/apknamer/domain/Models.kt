@@ -114,6 +114,7 @@ data class AppSettings(
     val sortOrder: SortOrder = SortOrder.NAME,
     val sortDescending: Boolean = false,
     val confirmRename: Boolean = true,
+    val tourSeen: Boolean = false,
 )
 
 data class ScanProgress(

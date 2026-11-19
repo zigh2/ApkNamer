@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.10]
+
+### Added
+- Filter tags next to **All**: **Rename** (light red, files that need a new name) and **Named** (light green, already correct), with counts. The default view now shows only files that need renaming.
+- Rows that already have the right name get a very light green background and a green status text (red is kept for real problems); works in light and dark themes.
+- The file-name template is now built from **draggable tags**: long-press and drag to reorder, tap to edit text/tag, make a tag or group optional, move or remove it. A raw-text editor remains under "Advanced".
+- Non-blocking **quick tour** (first launch; replay from Settings → Help). The highlight does not capture touches and the tip card can be dragged away or skipped.
+- Each release now has a single APK named with its version, e.g. `ApkNamer-v1.10.apk`.
+
+### Changed
+- New default name template for fresh installs: `{name}< V{version}>< (Android {minandroid} to {targetandroid})>< {arch}a>`, e.g. `Telegram V10.14.5 (Android 8.0 to 14) v8a`. A stored template equal to the old default is upgraded automatically.
+
 ## [1.9]
 
 ### Fixed (important)

@@ -14,10 +14,11 @@ class EntryQueryTest {
         size: Long = 0,
         install: InstallState = InstallState.NOT_INSTALLED,
         duplicate: Boolean = false,
+        status: PlanStatus = PlanStatus.UNCHANGED,
     ): Entry {
         val file = File("/dl/$name")
         val detected = DetectedFile(file, type, AppMetadata(label, pkg, "1.0", code), null, size, 0L)
-        return Entry(detected, RenamePlan(file, null, PlanStatus.UNCHANGED), install, duplicate)
+        return Entry(detected, RenamePlan(file, null, status), install, duplicate)
     }
 
     private val a = entry("b.apk", "Zeta", "com.z", 3, size = 10)
@@ -50,6 +51,16 @@ class EntryQueryTest {
         assertEquals(listOf("a.xapk"), names(EntryQuery.apply(all, "alp", Filter.ALL, SortOrder.NAME, false)))
         assertEquals(listOf("c.apk"), names(EntryQuery.apply(all, "COM.M", Filter.ALL, SortOrder.NAME, false)))
         assertEquals(listOf("b.apk"), names(EntryQuery.apply(all, "b.apk", Filter.ALL, SortOrder.NAME, false)))
+    }
+
+    @Test fun needsRenameAndNamedFilters() {
+        val todo = entry("t.apk", "Todo", "com.t", 1, status = PlanStatus.READY)
+        val done = entry("d.apk", "Done", "com.d", 1, status = PlanStatus.UNCHANGED)
+        val broken = entry("x.apk", "Broken", "com.x", 1, status = PlanStatus.UNREADABLE)
+        val list = listOf(todo, done, broken)
+        assertEquals(listOf("t.apk"), names(EntryQuery.apply(list, "", Filter.NEEDS_RENAME, SortOrder.NAME, false)))
+        assertEquals(listOf("d.apk"), names(EntryQuery.apply(list, "", Filter.NAMED, SortOrder.NAME, false)))
+        assertEquals(3, EntryQuery.apply(list, "", Filter.ALL, SortOrder.NAME, false).size)
     }
 
     @Test fun installStates() {

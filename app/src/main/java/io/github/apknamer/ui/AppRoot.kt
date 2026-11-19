@@ -2,6 +2,11 @@ package io.github.apknamer.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -57,12 +62,25 @@ fun AppRoot(viewModel: MainViewModel, onRequestPermission: () -> Unit) {
 
     BackHandler(enabled = state.screen != Screen.MAIN) { viewModel.back() }
 
-    Crossfade(targetState = state.screen, label = "screen") { screen ->
-        when (screen) {
-            Screen.MAIN -> MainScreen(state, viewModel, snackbarHostState, onRequestPermission)
-            Screen.SETTINGS -> SettingsScreen(state, viewModel, viewModel::back)
-            Screen.DETAILS -> DetailsScreen(state, viewModel, snackbarHostState, viewModel::back)
-            Screen.DUPLICATES -> DuplicatesScreen(state, viewModel, snackbarHostState, viewModel::back)
+    val tourBounds = remember { mutableStateMapOf<String, Rect>() }
+    CompositionLocalProvider(LocalTourBounds provides tourBounds) {
+        Box(Modifier.fillMaxSize()) {
+            Crossfade(targetState = state.screen, label = "screen") { screen ->
+                when (screen) {
+                    Screen.MAIN -> MainScreen(state, viewModel, snackbarHostState, onRequestPermission)
+                    Screen.SETTINGS -> SettingsScreen(state, viewModel, viewModel::back)
+                    Screen.DETAILS -> DetailsScreen(state, viewModel, snackbarHostState, viewModel::back)
+                    Screen.DUPLICATES -> DuplicatesScreen(state, viewModel, snackbarHostState, viewModel::back)
+                }
+            }
+            if (state.tourStep >= 0 && state.screen == Screen.MAIN && state.hasPermission) {
+                TourOverlay(
+                    step = state.tourStep,
+                    bounds = tourBounds,
+                    onNext = viewModel::nextTour,
+                    onSkip = viewModel::finishTour,
+                )
+            }
         }
     }
 

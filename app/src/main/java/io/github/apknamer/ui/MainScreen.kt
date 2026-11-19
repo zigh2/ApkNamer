@@ -5,6 +5,7 @@ package io.github.apknamer.ui
 import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +65,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -85,7 +88,7 @@ import io.github.apknamer.domain.SortOrder
 import java.io.File
 
 private val FILTERS = listOf(
-    Filter.ALL, Filter.APK, Filter.XAPK, Filter.APKM, Filter.APKS, Filter.UPDATES, Filter.DUPLICATES,
+    Filter.ALL, Filter.NEEDS_RENAME, Filter.NAMED, Filter.APK, Filter.XAPK, Filter.APKM, Filter.APKS, Filter.UPDATES, Filter.DUPLICATES,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,7 +113,10 @@ fun MainScreen(
                     if (state.canUndo && !state.busy) {
                         TextButton(onClick = vm::undo) { Text(stringResource(R.string.undo_last)) }
                     }
-                    IconButton(onClick = vm::openSettings) {
+                    IconButton(
+                        onClick = vm::openSettings,
+                        modifier = Modifier.tourTarget(LocalTourBounds.current, "settings"),
+                    ) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 },
@@ -238,7 +244,17 @@ private fun ResultsList(
                 )
             }
             if (state.cleanup.delete.isNotEmpty()) item { CleanupCard(state.cleanup, onCleanup) }
-            if (state.items.isEmpty()) item { InfoBlock(R.string.no_results_title, R.string.no_matches) }
+            if (state.items.isEmpty()) {
+                item {
+                    val allNamed = state.filter == Filter.NEEDS_RENAME && state.query.isEmpty() &&
+                        state.renameCount == 0 && state.namedCount > 0
+                    if (allNamed) {
+                        InfoBlock(R.string.all_named_title, R.string.all_named_body)
+                    } else {
+                        InfoBlock(R.string.no_results_title, R.string.no_matches)
+                    }
+                }
+            }
         }
         items(state.items, key = { it.detected.id }) { item ->
             ItemRow(item, loader, state.settings, onToggle = { onToggle(item.detected.id) }, onOpen = { onOpen(item.detected.id) })
@@ -259,7 +275,7 @@ private fun LocationCard(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    Card(Modifier.fillMaxWidth().padding(16.dp)) {
+    Card(Modifier.fillMaxWidth().padding(16.dp).tourTarget(LocalTourBounds.current, "location")) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.location_label), style = MaterialTheme.typography.labelMedium)
             Text(
@@ -327,6 +343,7 @@ private fun FilterRow(
     var sortOpen by remember { mutableStateOf(false) }
     val settings = state.settings
     LazyRow(
+        modifier = Modifier.tourTarget(LocalTourBounds.current, "filters"),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -360,10 +377,29 @@ private fun FilterRow(
             }
         }
         items(FILTERS) { filter ->
+            val red = MaterialTheme.colorScheme.error
+            val green = successColor()
+            val colors = when (filter) {
+                Filter.NEEDS_RENAME -> FilterChipDefaults.filterChipColors(
+                    containerColor = red.copy(alpha = 0.12f),
+                    selectedContainerColor = red.copy(alpha = 0.30f),
+                )
+                Filter.NAMED -> FilterChipDefaults.filterChipColors(
+                    containerColor = green.copy(alpha = 0.12f),
+                    selectedContainerColor = green.copy(alpha = 0.30f),
+                )
+                else -> FilterChipDefaults.filterChipColors()
+            }
+            val count = when (filter) {
+                Filter.NEEDS_RENAME -> state.renameCount
+                Filter.NAMED -> state.namedCount
+                else -> null
+            }
             FilterChip(
                 selected = state.filter == filter,
                 onClick = { onFilter(filter) },
-                label = { Text(filterLabel(filter)) },
+                label = { Text(if (count != null) filterLabel(filter) + " " + count else filterLabel(filter)) },
+                colors = colors,
             )
         }
     }
@@ -383,6 +419,8 @@ fun sortName(order: SortOrder): String = stringResource(
 @Composable
 private fun filterLabel(filter: Filter): String = when (filter) {
     Filter.ALL -> stringResource(R.string.filter_all)
+    Filter.NEEDS_RENAME -> stringResource(R.string.filter_rename)
+    Filter.NAMED -> stringResource(R.string.filter_named)
     Filter.APK -> "APK"
     Filter.XAPK -> "XAPK"
     Filter.APKM -> "APKM"
@@ -464,10 +502,14 @@ private fun ItemRow(
     val showInstall = lo.installTag &&
         (install == InstallState.UPDATE || install == InstallState.SAME || install == InstallState.DOWNGRADE)
     val showDuplicate = lo.duplicateTag && item.entry.duplicate
+    val success = successColor()
+    // Already correctly named: a very light green wash that works in light and dark themes.
+    val rowTint = if (item.plan.status == PlanStatus.UNCHANGED) success.copy(alpha = 0.10f) else Color.Transparent
 
     Row(
         Modifier
             .fillMaxWidth()
+            .background(rowTint)
             .clickable(onClick = onOpen)
             .padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -525,7 +567,11 @@ private fun ItemRow(
             }
             if (lo.status) {
                 statusText(item)?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (item.plan.status == PlanStatus.UNCHANGED) success else MaterialTheme.colorScheme.error,
+                    )
                 }
             }
             if (showType || showInstall || showDuplicate) {
@@ -571,7 +617,7 @@ private fun SelectionBar(
     onSelectAll: (Boolean) -> Unit,
     onRename: () -> Unit,
 ) {
-    Surface(tonalElevation = 3.dp) {
+    Surface(modifier = Modifier.tourTarget(LocalTourBounds.current, "selection"), tonalElevation = 3.dp) {
         Row(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

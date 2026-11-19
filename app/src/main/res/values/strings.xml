@@ -240,4 +240,58 @@
         <item quantity="one">Delete %1$d file?</item>
         <item quantity="other">Delete %1$d files?</item>
     </plurals>
+
+    <string name="filter_rename">Rename</string>
+    <string name="filter_named">Named</string>
+    <string name="all_named_title">All set</string>
+    <string name="all_named_body">Every package already has the right name. Choose All to see them.</string>
+
+    <string name="tpl_hint">Long-press a tag and drag it onto another tag to move it. Tap a tag to edit it.</string>
+    <string name="tpl_groups_note">Tags with the same colored outline form an optional group: it is dropped when any value inside it is missing.</string>
+    <string name="tpl_add_tags">Add a tag</string>
+    <string name="tpl_add_text">+ Text</string>
+    <string name="tpl_new_text">New text</string>
+    <string name="tpl_edit_title">Edit tag</string>
+    <string name="tpl_tag_label">Tag</string>
+    <string name="tpl_text_label">Text</string>
+    <string name="tpl_group_label">Visibility</string>
+    <string name="tpl_group_always">Always</string>
+    <string name="tpl_group_own">Optional (own group)</string>
+    <string name="tpl_group_join">Optional (with previous)</string>
+    <string name="tpl_earlier">Move earlier</string>
+    <string name="tpl_later">Move later</string>
+    <string name="tpl_remove">Remove</string>
+    <string name="tpl_ok">OK</string>
+    <string name="tpl_advanced">Advanced: edit as text</string>
+    <string name="tok_name">App name</string>
+    <string name="tok_package">Package</string>
+    <string name="tok_version">Version</string>
+    <string name="tok_code">Version code</string>
+    <string name="tok_type">Format</string>
+    <string name="tok_original">Original name</string>
+    <string name="tok_minsdk">Min API</string>
+    <string name="tok_minandroid">Min Android</string>
+    <string name="tok_targetsdk">Target API</string>
+    <string name="tok_targetandroid">Target Android</string>
+    <string name="tok_abi">CPU (ABI)</string>
+    <string name="tok_arch">CPU (short)</string>
+
+    <string name="section_help">Help</string>
+    <string name="tour_replay">Show the quick tour</string>
+    <string name="tour_next">Next</string>
+    <string name="tour_done">Done</string>
+    <string name="tour_skip">Skip</string>
+    <string name="tour_step">%1$d / %2$d</string>
+    <string name="tour_1_title">Choose where to look</string>
+    <string name="tour_1_body">Pick a folder, then tap Scan. APK Namer finds APK, XAPK, APKM and APKS files and reads the real app name and version.</string>
+    <string name="tour_2_title">Filter the list</string>
+    <string name="tour_2_body">By default you only see files that need a new name (red). Switch to Named (green) or All, or filter by format, updates or duplicates.</string>
+    <string name="tour_3_title">Open and select</string>
+    <string name="tour_3_body">Tap a row for details: size, path, permissions and duplicates. Tick the box to select it for renaming.</string>
+    <string name="tour_4_title">Rename</string>
+    <string name="tour_4_body">Press Rename to apply the new names. You can undo the last batch at any time.</string>
+    <string name="tour_5_title">Duplicates</string>
+    <string name="tour_5_body">Duplicates are byte-identical files. Review them on their own page and delete the extra copies; one copy of each app is always kept.</string>
+    <string name="tour_6_title">Make it yours</string>
+    <string name="tour_6_body">In Settings you can build the file-name template by dragging tags, choose the theme and language, and replay this tour. You can keep using the app while this tip is open; drag the tip to move it.</string>
 </resources>

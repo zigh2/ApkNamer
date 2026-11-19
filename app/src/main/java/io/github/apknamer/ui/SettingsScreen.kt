@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -52,7 +53,8 @@ import io.github.apknamer.domain.SortOrder
 import io.github.apknamer.domain.ThemeMode
 
 private val PRESETS = listOf(
-    "Name v1.0 (123)" to NameTemplate.DEFAULT,
+    "Name V1.0 (Android 8.0 to 14) v8a" to NameTemplate.DEFAULT,
+    "Name v1.0 (123)" to NameTemplate.LEGACY_DEFAULT,
     "Name_1.0" to "{name}_{version}",
     "Name [package] 1.0" to "{name}< [{package}]>< {version}>",
     "package-1.0-123" to "{package}-{version}-{code}",
@@ -171,37 +173,16 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
             }
 
             Section(stringResource(R.string.section_naming)) {
-                var text by rememberSaveable { mutableStateOf(s.rename.template) }
-                LaunchedEffect(s.rename.template) { if (text != s.rename.template) text = s.rename.template }
-                val unknown = NameTemplate.unknownTokens(text)
-                val preview = FileNameSanitizer.sanitize(NameTemplate.render(text, SAMPLE), s.rename.replaceSpaces) + ".apk"
+                val template = s.rename.template
+                val setTemplate: (String) -> Unit =
+                    { v -> vm.updateSettings { it.copy(rename = it.rename.copy(template = v)) } }
+                var showRaw by rememberSaveable { mutableStateOf(false) }
+                val preview = FileNameSanitizer.sanitize(NameTemplate.render(template, SAMPLE), s.rename.replaceSpaces) + ".apk"
 
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { v ->
-                        text = v
-                        vm.updateSettings { it.copy(rename = it.rename.copy(template = v)) }
-                    },
-                    label = { Text(stringResource(R.string.template_label)) },
-                    singleLine = true,
-                    isError = unknown.isNotEmpty(),
-                    supportingText = {
-                        if (unknown.isNotEmpty()) {
-                            Text(stringResource(R.string.template_unknown, unknown.joinToString(", ")))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(stringResource(R.string.template_help), style = MaterialTheme.typography.bodySmall)
+                TemplateEditor(template = template, onTemplate = setTemplate)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PRESETS.forEach { (label, template) ->
-                        AssistChip(
-                            onClick = {
-                                text = template
-                                vm.updateSettings { it.copy(rename = it.rename.copy(template = template)) }
-                            },
-                            label = { Text(label) },
-                        )
+                    PRESETS.forEach { (label, preset) ->
+                        AssistChip(onClick = { setTemplate(preset) }, label = { Text(label) })
                     }
                 }
                 Text(
@@ -209,6 +190,29 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                TextButton(onClick = { showRaw = !showRaw }) { Text(stringResource(R.string.tpl_advanced)) }
+                if (showRaw) {
+                    var text by rememberSaveable { mutableStateOf(template) }
+                    LaunchedEffect(template) { if (text != template) text = template }
+                    val unknown = NameTemplate.unknownTokens(text)
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { v ->
+                            text = v
+                            setTemplate(v)
+                        },
+                        label = { Text(stringResource(R.string.template_label)) },
+                        singleLine = true,
+                        isError = unknown.isNotEmpty(),
+                        supportingText = {
+                            if (unknown.isNotEmpty()) {
+                                Text(stringResource(R.string.template_unknown, unknown.joinToString(", ")))
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(stringResource(R.string.template_help), style = MaterialTheme.typography.bodySmall)
+                }
                 SwitchRow(
                     stringResource(R.string.opt_replace_spaces),
                     s.rename.replaceSpaces,
@@ -265,6 +269,13 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, onBack: () -> Unit) {
                     s.sortDescending,
                     { v -> vm.updateSettings { it.copy(sortDescending = v) } },
                 )
+            }
+
+            Section(stringResource(R.string.section_help)) {
+                OutlinedButton(onClick = {
+                    vm.startTour()
+                    vm.back()
+                }) { Text(stringResource(R.string.tour_replay)) }
             }
 
             Section(stringResource(R.string.section_about)) {

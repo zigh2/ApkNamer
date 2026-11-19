@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,11 @@ fun AppIcon(item: DetectedFile, loader: IconLoader, size: Dp, modifier: Modifier
         }
     }
 }
+
+/** A green that reads well on both light and dark surfaces. */
+@Composable
+fun successColor(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF81C784) else Color(0xFF2E7D32)
 
 @Composable
 fun Tag(text: String, container: Color, content: Color) {

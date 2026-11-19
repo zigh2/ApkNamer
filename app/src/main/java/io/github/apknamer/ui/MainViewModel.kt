@@ -78,7 +78,10 @@ data class UiState(
     val dupGroups: List<DuplicateGroup> = emptyList(),
     val dupSelected: Set<String> = emptySet(),
     val query: String = "",
-    val filter: Filter = Filter.ALL,
+    val filter: Filter = Filter.NEEDS_RENAME,
+    val renameCount: Int = 0,
+    val namedCount: Int = 0,
+    val tourStep: Int = -1,
     val busy: Boolean = false,
     val canUndo: Boolean = false,
     val diagnostics: String? = null,
@@ -131,6 +134,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             UiState(
                 hasPermission = StoragePermission.isGranted(application),
                 settings = s,
+                tourStep = if (s.tourSeen) -1 else 0,
                 root = s.lastRoot?.let { File(it) }
                     ?: Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             )
@@ -469,6 +473,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // ---- quick tour -----------------------------------------------------------------------
+
+    fun startTour() {
+        _state.update { it.copy(tourStep = 0) }
+    }
+
+    fun nextTour() {
+        val next = _state.value.tourStep + 1
+        if (next >= TOUR_STEPS.size) finishTour() else _state.update { it.copy(tourStep = next) }
+    }
+
+    /** Ends (or skips) the tour and remembers that it has been seen. */
+    fun finishTour() {
+        _state.update { it.copy(tourStep = -1) }
+        settingsRepository.update { it.copy(tourSeen = true) }
+    }
+
     // ---- settings -------------------------------------------------------------------------
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
@@ -476,7 +497,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetSettings() {
-        settingsRepository.update { AppSettings(lastRoot = it.lastRoot, language = it.language) }
+        settingsRepository.update {
+            AppSettings(lastRoot = it.lastRoot, language = it.language, tourSeen = it.tourSeen)
+        }
     }
 
     // ---- derived data ---------------------------------------------------------------------
@@ -522,6 +545,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 totalFound = all.size,
                 totalBytes = all.sumOf { it.detected.size },
                 cleanup = DuplicateCleanup.plan(all),
+                renameCount = all.count { it.plan.status == PlanStatus.READY },
+                namedCount = all.count { it.plan.status == PlanStatus.UNCHANGED },
                 dupGroups = groups,
                 dupSelected = cur.dupSelected.filter { it in groupIds }.toSet(),
                 detailsEntry = cur.detailsId?.let { id -> all.firstOrNull { it.detected.id == id } } ?: cur.detailsEntry,

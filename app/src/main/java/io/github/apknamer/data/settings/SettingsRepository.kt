@@ -29,7 +29,9 @@ class SettingsRepository(context: Context) {
 
     private fun read() = AppSettings(
         rename = RenameOptions(
-            template = prefs.getString("template", null) ?: NameTemplate.DEFAULT,
+            template = prefs.getString("template", null).let { stored ->
+                if (stored == null || stored == NameTemplate.LEGACY_DEFAULT) NameTemplate.DEFAULT else stored
+            },
             replaceSpaces = prefs.getBoolean("replace_spaces", false),
             fixExtension = prefs.getBoolean("fix_extension", true),
         ),
@@ -59,6 +61,7 @@ class SettingsRepository(context: Context) {
         sortOrder = enumOf(prefs.getString("sort", null), SortOrder.NAME),
         sortDescending = prefs.getBoolean("sort_desc", false),
         confirmRename = prefs.getBoolean("confirm_rename", true),
+        tourSeen = prefs.getBoolean("tour_seen", false),
     )
 
     private fun write(s: AppSettings) {
@@ -90,6 +93,7 @@ class SettingsRepository(context: Context) {
             .putString("sort", s.sortOrder.name)
             .putBoolean("sort_desc", s.sortDescending)
             .putBoolean("confirm_rename", s.confirmRename)
+            .putBoolean("tour_seen", s.tourSeen)
             .apply()
     }
 

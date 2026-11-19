@@ -1,6 +1,6 @@
 package io.github.apknamer.domain
 
-enum class Filter { ALL, APK, XAPK, APKM, APKS, UPDATES, DUPLICATES }
+enum class Filter { ALL, NEEDS_RENAME, NAMED, APK, XAPK, APKM, APKS, UPDATES, DUPLICATES }
 
 enum class SortOrder { NAME, APP_NAME, SIZE, DATE, VERSION }
 
@@ -51,6 +51,8 @@ object EntryQuery {
 
     private fun matchesFilter(e: Entry, filter: Filter): Boolean = when (filter) {
         Filter.ALL -> true
+        Filter.NEEDS_RENAME -> e.plan.status == PlanStatus.READY
+        Filter.NAMED -> e.plan.status == PlanStatus.UNCHANGED
         Filter.APK -> e.detected.type == PackageType.APK
         Filter.XAPK -> e.detected.type == PackageType.XAPK
         Filter.APKM -> e.detected.type == PackageType.APKM

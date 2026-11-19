@@ -59,7 +59,7 @@ Because of this policy the app is intended for distribution via GitHub Releases 
 
 ## Download
 
-Latest APK: **[ApkNamer.apk](https://github.com/OWNER/ApkNamer/releases/latest/download/ApkNamer.apk)** · all versions on the [Releases](https://github.com/OWNER/ApkNamer/releases) page.
+Latest release: **[Releases → latest](https://github.com/OWNER/ApkNamer/releases/latest)** — each release has one file named `ApkNamer-vX.Y.apk`. All versions are on the [Releases](https://github.com/OWNER/ApkNamer/releases) page.
 
 ## Publishing a new version (maintainers)
 

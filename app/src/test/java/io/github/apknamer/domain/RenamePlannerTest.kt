@@ -7,7 +7,7 @@ import org.junit.Test
 
 class RenamePlannerTest {
     private val meta = AppMetadata("Telegram", "org.telegram.messenger", "10.14.5", 5034)
-    private val options = RenameOptions()
+    private val options = RenameOptions(template = NameTemplate.LEGACY_DEFAULT)
     private val none: (File) -> Boolean = { false }
 
     private fun item(path: String, type: PackageType = PackageType.APK, m: AppMetadata? = meta) =
@@ -56,6 +56,12 @@ class RenamePlannerTest {
         val opts = options.copy(fixExtension = false)
         val plan = RenamePlanner.plan(listOf(item("/dl/app.zip", PackageType.XAPK)), opts, none).single()
         assertEquals("zip", plan.target?.extension)
+    }
+
+    @Test fun defaultTemplateForNewInstalls() {
+        val m = meta.copy(minSdk = 26, targetSdk = 34, abis = setOf("arm64-v8a"))
+        val plan = RenamePlanner.plan(listOf(item("/dl/a.apk", m = m)), RenameOptions(), none).single()
+        assertEquals("Telegram V10.14.5 (Android 8.0 to 14) v8a.apk", plan.target?.name)
     }
 
     @Test fun androidAndCpuTokens() {

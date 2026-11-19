@@ -12,7 +12,7 @@
 
 ## النشر التلقائي
 ارفع ملف `ApkNamer-vX.Y.zip` إلى مجلد `incoming/` فيستبدل GitHub Actions ملفات المشروع كلها، ويشغّل الاختبارات،
-ثم يبني APK وينشره في صفحة Releases. الرابط المباشر لآخر نسخة: `releases/latest/download/ApkNamer.apk`.
+ثم يبني APK وينشره في صفحة Releases باسم يحمل الإصدار، مثل `ApkNamer-v1.10.apk`. آخر نسخة: `releases/latest`.
 التفاصيل وإعداد التوقيع في [incoming/README.md](incoming/README.md).
 
 ## البناء

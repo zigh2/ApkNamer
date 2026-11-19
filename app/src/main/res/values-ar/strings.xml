@@ -296,4 +296,58 @@
         <item quantity="many">حذف %1$d ملفاً؟</item>
         <item quantity="other">حذف %1$d ملف؟</item>
     </plurals>
+
+    <string name="filter_rename">للتسمية</string>
+    <string name="filter_named">مطابق</string>
+    <string name="all_named_title">كل شيء جاهز</string>
+    <string name="all_named_body">كل الحزم لها الأسماء الصحيحة. اختر «الكل» لعرضها.</string>
+
+    <string name="tpl_hint">اضغط مطولاً على وسم واسحبه فوق وسم آخر لنقله. اضغط على وسم لتعديله.</string>
+    <string name="tpl_groups_note">الوسوم ذات الإطار الملوّن نفسه تشكّل مجموعة اختيارية: تُحذف كاملة إذا كانت أي قيمة بداخلها غير متوفرة.</string>
+    <string name="tpl_add_tags">إضافة وسم</string>
+    <string name="tpl_add_text">+ نص</string>
+    <string name="tpl_new_text">نص جديد</string>
+    <string name="tpl_edit_title">تعديل الوسم</string>
+    <string name="tpl_tag_label">الوسم</string>
+    <string name="tpl_text_label">النص</string>
+    <string name="tpl_group_label">الظهور</string>
+    <string name="tpl_group_always">دائماً</string>
+    <string name="tpl_group_own">اختياري (مجموعة مستقلة)</string>
+    <string name="tpl_group_join">اختياري (مع السابق)</string>
+    <string name="tpl_earlier">تقديم</string>
+    <string name="tpl_later">تأخير</string>
+    <string name="tpl_remove">إزالة</string>
+    <string name="tpl_ok">موافق</string>
+    <string name="tpl_advanced">متقدم: التعديل كنص</string>
+    <string name="tok_name">اسم التطبيق</string>
+    <string name="tok_package">الحزمة</string>
+    <string name="tok_version">الإصدار</string>
+    <string name="tok_code">رقم الإصدار</string>
+    <string name="tok_type">الصيغة</string>
+    <string name="tok_original">الاسم الأصلي</string>
+    <string name="tok_minsdk">أدنى API</string>
+    <string name="tok_minandroid">أدنى أندرويد</string>
+    <string name="tok_targetsdk">API المستهدف</string>
+    <string name="tok_targetandroid">أندرويد المستهدف</string>
+    <string name="tok_abi">المعالج (ABI)</string>
+    <string name="tok_arch">المعالج (مختصر)</string>
+
+    <string name="section_help">المساعدة</string>
+    <string name="tour_replay">عرض الجولة السريعة</string>
+    <string name="tour_next">التالي</string>
+    <string name="tour_done">تم</string>
+    <string name="tour_skip">تخطي</string>
+    <string name="tour_step">%1$d / %2$d</string>
+    <string name="tour_1_title">اختر مكان البحث</string>
+    <string name="tour_1_body">اختر مجلداً ثم اضغط «بحث». يجد التطبيق ملفات APK وXAPK وAPKM وAPKS ويقرأ اسم التطبيق وإصداره الحقيقيين.</string>
+    <string name="tour_2_title">صفِّ القائمة</string>
+    <string name="tour_2_body">افتراضياً ترى فقط الملفات التي تحتاج إلى اسم جديد (الأحمر). بدّل إلى «مطابق» (الأخضر) أو «الكل»، أو صفِّ حسب الصيغة أو التحديثات أو المكررات.</string>
+    <string name="tour_3_title">افتح وحدّد</string>
+    <string name="tour_3_body">اضغط على الصف لعرض التفاصيل: الحجم والمسار والصلاحيات والمكررات. ضع علامة في المربع لتحديده لإعادة التسمية.</string>
+    <string name="tour_4_title">أعد التسمية</string>
+    <string name="tour_4_body">اضغط «إعادة تسمية» لتطبيق الأسماء الجديدة. يمكنك التراجع عن آخر دفعة في أي وقت.</string>
+    <string name="tour_5_title">المكررات</string>
+    <string name="tour_5_body">المكررات ملفات متطابقة تماماً. راجعها في صفحتها واحذف النسخ الزائدة؛ تبقى دائماً نسخة واحدة من كل تطبيق.</string>
+    <string name="tour_6_title">خصّصه لك</string>
+    <string name="tour_6_body">من الإعدادات يمكنك بناء قالب اسم الملف بسحب الوسوم، واختيار السمة واللغة، وإعادة عرض هذه الجولة. يمكنك متابعة استخدام التطبيق والتلميح ظاهر؛ اسحب التلميح لتحريكه.</string>
 </resources>

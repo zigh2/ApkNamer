@@ -8,7 +8,11 @@ package io.github.apknamer.domain
  *   Example: `{name}< v{version}>< ({code})>` -> `Telegram v10.14.5 (5034)`, or just `Telegram`.
  */
 object NameTemplate {
-    const val DEFAULT = "{name}< v{version}>< ({code})>"
+    /** Default for new installs: name, version, Android range and CPU, e.g. "Telegram V10.14.5 (Android 8.0 to 14) v8a". */
+    const val DEFAULT = "{name}< V{version}>< (Android {minandroid} to {targetandroid})>< {arch}a>"
+
+    /** The default of versions before 1.10; stored settings equal to it are upgraded to [DEFAULT]. */
+    const val LEGACY_DEFAULT = "{name}< v{version}>< ({code})>"
 
     val TOKENS = listOf(
         "name", "package", "version", "code", "type", "original",
