@@ -136,8 +136,8 @@ jobs:
           gradle testDebugUnitTest "$TASK" --stacktrace
           APK=$(ls app/build/outputs/apk/$DIR/*.apk | head -n1)
           mkdir -p "$RUNNER_TEMP/dist"
-          # A single, constant file name: the release tag already carries the version.
-          cp "$APK" "$RUNNER_TEMP/dist/ApkNamer.apk"
+          # One asset per release, named with the version: ApkNamer-v1.10.apk
+          cp "$APK" "$RUNNER_TEMP/dist/ApkNamer-v${VERSION}.apk"
 
       - name: Commit the new project state
         if: steps.pick.outputs.found == 'true'
@@ -181,20 +181,21 @@ jobs:
         run: |
           set -euo pipefail
           TAG="v${VERSION}"
+          FILE="ApkNamer-v${VERSION}.apk"
           NOTES="Built automatically from incoming/${NAME}."
           if [ "$SIGNED" != "true" ]; then NOTES="$NOTES (debug-signed build: no release keystore configured)"; fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             # Keep exactly one APK per release: remove any other uploaded asset (e.g. from older versions of this workflow).
             for ASSET in $(gh release view "$TAG" --json assets --jq '.assets[].name'); do
-              if [ "$ASSET" != "ApkNamer.apk" ]; then gh release delete-asset "$TAG" "$ASSET" --yes; fi
+              if [ "$ASSET" != "$FILE" ]; then gh release delete-asset "$TAG" "$ASSET" --yes; fi
             done
-            gh release upload "$TAG" "$RUNNER_TEMP/dist/ApkNamer.apk" --clobber
+            gh release upload "$TAG" "$RUNNER_TEMP/dist/$FILE" --clobber
           else
-            gh release create "$TAG" "$RUNNER_TEMP/dist/ApkNamer.apk" \
+            gh release create "$TAG" "$RUNNER_TEMP/dist/$FILE" \
               --title "APK Namer $TAG" --notes "$NOTES" --target "$(git rev-parse HEAD)" --latest
           fi
           {
             echo "### APK Namer $TAG published"
-            echo "Latest: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/ApkNamer.apk"
-            echo "This version: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/ApkNamer.apk"
+            echo "Download: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${FILE}"
+            echo "Latest release page: https://github.com/${GITHUB_REPOSITORY}/releases/latest"
           } >> "$GITHUB_STEP_SUMMARY"
