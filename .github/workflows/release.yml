@@ -24,6 +24,7 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
@@ -182,8 +183,26 @@ jobs:
           set -euo pipefail
           TAG="v${VERSION}"
           FILE="ApkNamer-v${VERSION}.apk"
-          NOTES="Built automatically from incoming/${NAME}."
-          if [ "$SIGNED" != "true" ]; then NOTES="$NOTES (debug-signed build: no release keystore configured)"; fi
+          # Release notes: the CHANGELOG.md section of this version, then the checksum of the APK.
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          {
+            awk -v v="$VERSION" '
+              BEGIN { gsub(/\./, "\\.", v); pat = "^## \\[?" v "\\]?([ ]|$)" }
+              $0 ~ pat { on = 1; next }
+              on && /^## / { exit }
+              on { print }
+            ' CHANGELOG.md | sed '/./,$!d' || true
+          } > "$NOTES_FILE"
+          if [ ! -s "$NOTES_FILE" ]; then echo "Built automatically from incoming/${NAME}." > "$NOTES_FILE"; fi
+          SHA=$(sha256sum "$RUNNER_TEMP/dist/$FILE" | cut -d' ' -f1)
+          {
+            echo
+            echo "**SHA-256** of \`${FILE}\`: \`${SHA}\`"
+            if [ "$SIGNED" != "true" ]; then
+              echo
+              echo "> Debug-signed build: no release keystore is configured, so this APK cannot be installed over a build signed with another key."
+            fi
+          } >> "$NOTES_FILE"
           if gh release view "$TAG" >/dev/null 2>&1; then
             # Keep exactly one APK per release: remove any other uploaded asset (e.g. from older versions of this workflow).
             for ASSET in $(gh release view "$TAG" --json assets --jq '.assets[].name'); do
@@ -192,7 +211,7 @@ jobs:
             gh release upload "$TAG" "$RUNNER_TEMP/dist/$FILE" --clobber
           else
             gh release create "$TAG" "$RUNNER_TEMP/dist/$FILE" \
-              --title "APK Namer $TAG" --notes "$NOTES" --target "$(git rev-parse HEAD)" --latest
+              --title "APK Namer $TAG" --notes-file "$NOTES_FILE" --target "$(git rev-parse HEAD)" --latest
           fi
           {
             echo "### APK Namer $TAG published"
