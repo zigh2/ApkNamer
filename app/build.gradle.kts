@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.apknamer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11000
-        versionName = "1.10"
+        versionCode = 11100
+        versionName = "1.11"
     }
 
     signingConfigs {

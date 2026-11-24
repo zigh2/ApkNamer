@@ -5,6 +5,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.11]
+
+Maintenance release: documentation, repository and CI/CD changes only. The app itself is unchanged apart from its version number.
+
+### Fixed
+- README badges and links pointed to a placeholder owner (`OWNER`); they now point to this repository.
+- README and CONTRIBUTING referred to `incoming/README.md`, which did not exist. It now explains how to publish a version and how to set up release signing.
+- README: duplicates are described as they work since 1.9 (same app name, size and SHA-256, not package and version); the naming tokens and default template added in 1.9 and 1.10 are documented; the roadmap no longer lists search/sort/filter and the signed release workflow, which already exist.
+
+### Added
+- GitHub Release notes are taken from this changelog and include the APK's SHA-256 checksum.
+- Repository hygiene check in CI: required files, no placeholder owner, no tracked keystore or `local.properties`, working relative links in Markdown files.
+- `timeout-minutes` on every workflow job; CI runs for the same pull request cancel each other.
+- `.gitattributes`, and a contact link to private vulnerability reporting in the issue chooser.
+
+### Changed
+- CI uploads artifacts with `actions/upload-artifact@v6` (Node.js 24 runtime).
+
 ## [1.10]
 
 ### Added
